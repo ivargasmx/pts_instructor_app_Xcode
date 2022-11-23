@@ -1,0 +1,22 @@
+{
+  "cli": {
+    "version": ">= 0.45.0",    
+      "requireCommit": false
+  },  "build": {
+    "production": {
+      "developmentClient": true,      
+      "distribution": "internal"
+    }
+  },  "submit": {
+    "production": {
+      "android": {
+        
+        "track": "internal"
+      },      "ios": {
+        "appleId": "jon@phlebotomyusa.com",        
+        "ascAppId": "1556707374",        
+        "appleTeamId": "FM7A3759JP"
+      }
+    }
+  }
+}

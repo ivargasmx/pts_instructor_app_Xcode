@@ -1,26 +1,41 @@
 {
   "expo": {
-    "name": "pts_instructor_app",
-    "slug": "pts_instructor_app",
-    "version": "1.0.0",
+    "name": "Phlebotomy Trainning Specialists",
+    "description": "Phlebotomy Trainning Specialists",  
+    "slug": "phlebotomytrainingmanager",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "privacy": "public",
+    "icon": "./assets/images/iTunesArtwork@2x.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true
-    },
+    "version": "1.1.18",
+    "ios":       {
+      "bundleIdentifier": "com.phlebotomy.trainingmanager",      
+      "buildNumber": "1.3.8",      
+      "requireFullScreen":true,      
+      "infoPlist": 
+      {
+       "UIBackgroundModes": ["location","fetch"],
+       "UIRequiresFullScreen":true,        
+       "NSPhotoLibraryUsageDescription":"Allow the app to access your photo library to select a photo for Inventory report.",        
+       "NSCameraUsageDescription":"Allow the app to access your camera for you to take a photo for Inventory report.",        
+       "NSLocationAlwaysUsageDescription":"Your location is used to show your shift and classroom info.",        
+       "NSLocationUsageDescription":"Your location is used to find your shift.",        
+       "NSLocationWhenInUseUsageDescription":"We need your location in order to access your shift and classroom info."
+      },     
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff" 
+      }, 
+      "config":
+       {
+        "googleMapsApiKey": "AIzaSyCSqDyiNE1zdMm_jvdhGYsBRoP6reH5r-Q"
+       },    
+        "icon": "./assets/images/iTunesArtwork@2x.png",      
+        "supportsTablet": true
+     }, 
     "android": {
+      "useNextNotificationsApi": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
@@ -28,6 +43,13 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "notification": 
+    {
+      "icon": "./assets/images/phleico-notifications.png",      
+      "color": "#ee8172",      
+      "iosDisplayInForeground": true,      
+      "androidMode": "default"
     }
   }
 }
