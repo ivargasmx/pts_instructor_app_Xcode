@@ -86,6 +86,7 @@
     }
     onSuccessSentReport = () => {   
       const { navigate } = this.props.navigation
+      global.screen = "Shift"
       navigate("Shift",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
     }
 

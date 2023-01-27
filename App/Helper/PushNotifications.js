@@ -20,7 +20,7 @@ export default function App() {
     // This listener is fired whenever a notification is received while the app is foregrounded
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
       setNotification(notification);
-      console.log(notification.request.content.data)
+      console.log("notification.request.content.data::",notification.request.content.data)
       if( notification.request.content.data.play_alert !== undefined ) 
           playNotificationAlert(notification.request.content.data.play_alert)
     });

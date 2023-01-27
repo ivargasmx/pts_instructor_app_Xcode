@@ -6,6 +6,8 @@
 //  Copyright © 2018 [Company]. All rights reserved.
 //
 
+ "UIBackgroundModes": ["location","fetch"],
+
 import React from "react"
 import { Image,ImageBackground, StyleSheet, Text, TextInput, Linking,TouchableOpacity, View,  Alert ,Dimensions,
 	ActivityIndicator,ScrollView} from "react-native"
@@ -505,6 +507,7 @@ console.log("onVideoPlay....")
 	showSendErrorScreen(navObj){
 	   
 		const { navigate } = navObj
+		global.screen = "SubmitError"
 		navigate("SubmitError",{_onLoadGetUsers:this.onLoadGetUsers})
 	}
     setUserInterfface = (type,extra_text) => {
@@ -1599,7 +1602,7 @@ console.log("onVideoPlay....")
 								}}>
 								
 								</TouchableOpacity>		
-						       <Text style={styles.txtCantTitle} > No Internet connection detected</Text>
+						       <Text style={styles.txtCantTitle} > No Internet connection detected.</Text>
 
 						  
 						  <View

@@ -1,5 +1,7 @@
 import {  Alert,StyleSheet,TouchableHighlight,TouchableOpacity } from "react-native"
 import Moment from 'moment';
+import Constants from 'expo-constants';
+
 
 const authHelper = {
 ////////////////////////////////
@@ -81,9 +83,12 @@ logOut : function (host,token) {
     ///////////////////////////////// 
     recoverLoginSession : function () {
     /////////////////////////////////
+ 
     let body_data = JSON.stringify({
+      logintype:"reconnect",
       email: global.email,
-      password: "Instruct0r" +  Moment(global.today).format('YYMMDD') 
+      password: "Instruct0r" +  Moment(global.today).format('YYMMDD') ,
+      app_release :  Constants.manifest.version  + " (" + Constants.manifest.ios.buildNumber+")"
      })
      console.log(body_data)
      
@@ -172,7 +177,7 @@ logOut : function (host,token) {
                      ],								
                      {cancelable: false},							
                      );
-
+                     global.screen = "Login"
 							 navigate("Login");
 					   }
 
@@ -187,7 +192,66 @@ logOut : function (host,token) {
 				  console.log(error);	 
 				  console.error(error);
 				});
-   },   
+   },
+  //////////////////////////////////// 
+  sendHeartBeat_disable : function () {  
+   ////////////////////////////////////  
+     //const { navigate } = nav
+     console.log( "sendHeartBeat");
+     let body_data = JSON.stringify({
+      notification_token_id:global.push_notification_key
+     })
+     console.log("body_data :: ",body_data)
+
+     fetch(global.host + '/api/auth/heartbeat' + "?notification_token_id=" +global.push_notification_key
+     , {
+        method: 'GET',			
+        headers: {
+           'Accept': 'application/json',			   
+           'Content-Type': 'application/json', 
+           "cache-control": "no-cache",			   
+           'Authorization' : global.token_type +  " " + global.access_token,
+           
+        },
+       
+        
+       }).then((response) =>  response.text()) 
+           .then((responseData) =>
+            {
+              try {
+              
+                 let responseTXT = responseData;
+                 let responseJSON = JSON.parse (responseTXT); 
+                 console.log(responseData);
+
+                 if( responseJSON['message']  === "Unauthenticated."
+                    || responseJSON['success'] == undefined 
+                    || responseJSON['success'] == false 
+
+                 ) {
+                   
+                     global.login_session = false
+                 }else{
+                     global.login_session = true
+                 }
+
+                 return global.login_session
+
+              } catch (e) {
+                 console.log(e);
+                 global.login_session = false
+                 return global.login_session
+
+              }
+
+           }).catch((error) => {
+             console.log(error);	 
+             console.error(error);
+             global.login_session = false
+             return global.login_session
+           });
+  },
+
    ////////////////////////////
    HelloTester : function () {
    ///////////////////////////   

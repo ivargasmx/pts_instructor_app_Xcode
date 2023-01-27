@@ -39,6 +39,7 @@
     }
 	onBtnBackPressed = () => {
     global.injured_report_data = null;
+    global.screen = "Classroom"
 		this.props.navigation.goBack()
     }
 

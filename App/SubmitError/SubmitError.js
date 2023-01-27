@@ -30,6 +30,7 @@ export default class SubmitError extends Component {
       }
 
 	onBtnBackPressed = () => {
+		global.screen = "Classroom"
 		this.props.navigation.goBack()	
 	}
 	componentDidMount() {

@@ -161,6 +161,7 @@ export default class Weekly extends React.Component {
 	}
 	onLoginfailure = () => {
 		const { navigate } = this.props.navigation
+		global.screen = "Login"
 		navigate("Login",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 	onBtn1Pressed = () => {
@@ -225,6 +226,7 @@ export default class Weekly extends React.Component {
 
 	onTxtDayPressed = () => {
 		const { navigate } = this.props.navigation
+		global.screen = "Shift"
 		navigate("Shift",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -244,7 +246,7 @@ export default class Weekly extends React.Component {
 		global.current_week_start = global.current_week_start_orig ;
 		
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Monthly"
 		navigate("Monthly",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -459,7 +461,7 @@ export class ChildElementShifts extends React.Component{
 
 		const { navigate } = this.props.nav.props.navigation
 
- 	
+	   global.screen = "Classroom"
        navigate("Classroom",{ parameters: item ,_onLoadGetUsers :this.props.nav.props.navigation.state.params._onLoadGetUsers}) 	
 		// navigate("Classroom",{ parameters: item ,_onLoadGetUsers :this.props.nav.state.params._onLoadGetUsers}) 
 
@@ -604,10 +606,10 @@ export class ChildElementShifts extends React.Component{
 											flex: 1,
 										}}/>
 									<Text
-										style={styles.txtTimeWText}>{objectItem.class_time}</Text>
+										style={styles.txtTimeWText}>{objectItem.class_time} {objectItem.is_assigned == 0 ? "(Default)":""}</Text>
 								</View>
 								<Text
-									style={styles.txtClassText}>Class #{objectItem.class_number}</Text>
+									style={styles.txtClassText}>Class #{objectItem.class_number} </Text>
 								<Text
 									style={styles.txtHoursWText}>{objectItem.class_hours}</Text>
 								<Text
@@ -655,10 +657,10 @@ export class ChildElementShifts extends React.Component{
 											flex: 1,
 										}}/>
 									<Text
-										style={styles.txtTimeBText}>{objectItem.class_time}</Text>
+										style={styles.txtTimeBText}>{objectItem.class_time} {objectItem.is_assigned == 0 ? "(Default)":""}</Text>
 								</View>
 								<Text
-									style={styles.txtClassTwoText}>Class #{objectItem.class_number}</Text>
+									style={styles.txtClassTwoText}>Class #{objectItem.class_number} D</Text>
 								<TouchableOpacity key={res.id} delayPressIn={5} delayPressOut={5} delayLongPress={5}
 									onPress={this.onTxtMonthPressed}
 									style={styles.cardEveShiftView}/>
@@ -997,7 +999,7 @@ const styles = StyleSheet.create({
 	txtTimeWText: {
 		color: "rgb(39, 39, 39)",
 		fontFamily: "Montserrat-Regular",
-		fontSize: 18,
+		fontSize: 17,
 		fontStyle: "normal",
 		fontWeight: "normal",
 		textAlign: "left",

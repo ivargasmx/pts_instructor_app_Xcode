@@ -24,6 +24,7 @@ import ErrorHandler    from "../Helper/ErrorHandler"
 import TimerMixin from 'react-timer-mixin';
 import authHelper   from "../Helper/Sessions";
 import StillConnection from "../Helper/StillConnection"
+import AppStates from "../Helper/AppStates"
 
 import "./../../global.js";
 
@@ -47,6 +48,7 @@ export default class Shift extends React.Component {
 		super(props);
 	
 		this.state = {
+			current_screen : "Shift",
 			data : null ,
 			id : "",
 			authenticated : 0,
@@ -79,7 +81,7 @@ export default class Shift extends React.Component {
 	onLoginfailure = () => {
 	
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Login"
 		navigate("Login",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -120,6 +122,7 @@ export default class Shift extends React.Component {
 	
 				   try {
 					   var responseTXT = responseData;
+					   console.log("<<<<<< Call Shift >>>>>");
 					   this.shiftHandler(responseTXT,0);
 
 
@@ -152,9 +155,6 @@ shiftHandler = (responseTXT,local) => {
 		var shifts;
 		var shift_count =0;
 	   if(responseJSON['success'] !== undefined && responseJSON['success']) {
-			 
-
-			 
 			 let _next_shifts = null;
 			 let returnShifts = [];
 			 let clocked_in = null;
@@ -193,15 +193,19 @@ shiftHandler = (responseTXT,local) => {
 
 			 }
 
-			 global.required_checkout_pictures = instructor.require_clockout_pictures == 0 ? false: true;
-             console.log("required checkout pictures : ",global.required_checkout_pictures);
+			 global.required_clockout_pictures = instructor.require_clockout_pictures == 0 ? false: true;
+			 global.required_clockin_pictures = instructor.require_clockin_picture == 0 ? false: true;
+			 
+            //global.required_clockin_pictures = false 
+             console.log("required check out pictures : ",global.required_clockout_pictures);
+			 console.log("required check in pictures : ",global.required_clockin_pictures);
 			 
 			 global.require_inventory_confirm = 
 			   ( instructor.require_inventory_confirm != undefined
 				 && instructor.require_inventory_confirm != 0 // && instructor.require_inventory_confirm != null
 				 ) ? true: false;
              
-		
+	
 		     console.log("required inventory config : ",global.require_inventory_confirm);
 
 			 global.instructor_id  = instructor.id;
@@ -372,6 +376,7 @@ shiftHandler = (responseTXT,local) => {
 	onComGooglecodeItermPressed = () => {
 
 		const { navigate } = this.props.navigation
+		global.screen = "Login"
 		navigate("Login",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -381,9 +386,11 @@ shiftHandler = (responseTXT,local) => {
 		const { navigate } = this.props.navigation
 		if( global.connection == 1) {
 			global.shifttype = "real";
+			global.screen = "Classroom"
 			navigate("Classroom",{ parameters: item ,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers}) 
 		}else{	
 			global.shifttype = "real";
+			global.screen = "Classroom"
 			navigate("Classroom",{ parameters: item , next_shift:this.state.next_shift ,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})	 
 		}
 
@@ -396,7 +403,7 @@ shiftHandler = (responseTXT,local) => {
 		global.current_week_start = global.current_week_start_orig ;
 
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Monthly"
 		navigate("Monthly",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -438,6 +445,7 @@ shiftHandler = (responseTXT,local) => {
 			   );
            console.log('You must Clock In before you can send Incident Report')
 		}else{
+			global.screen = "InjuredPersonDetails"
 			navigate("InjuredPersonDetails",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers});
 		}
 
@@ -530,6 +538,7 @@ shiftHandler = (responseTXT,local) => {
 		global.current_week_end = global.current_week_end_orig ;
 		global.current_week_start = global.current_week_start_orig ;
 		const { navigate } = this.props.navigation
+		global.screen = "Weekly"
 		navigate("Weekly",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -545,12 +554,15 @@ shiftHandler = (responseTXT,local) => {
 		console.log(this.state.data[0])
 	  const { navigate } = this.props.navigation
 
-      if(this.state.data && this.state.data.length > 0)
-		 navigate("Specifications",{ header: this.state.data[0] ,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers});
+      if(this.state.data && this.state.data.length > 0){
+		global.screen = "Specifications"
+		navigate("Specifications",{ header: this.state.data[0] ,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers});
+
+	  }
 	}
 	showSendErrorScreen(navObj){
 		const { navigate } = navObj
-
+        global.screen = "SubmitError"
 		navigate("SubmitError",{_onLoadGetUsers :navObj.state.params._onLoadGetUsers})
 	}
 	render() {
@@ -589,6 +601,7 @@ shiftHandler = (responseTXT,local) => {
 	            }        	
 
 				<StillConnection  parentWindow = {this} />
+				<AppStates></AppStates>
 					 
 				  <KeyboardAwareScrollView  behavior={ Platform.OS === 'ios'? 'padding': null}
 				      extraHeight = {210}

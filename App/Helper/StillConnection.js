@@ -9,7 +9,11 @@ const StillConnection = (params) => {
   const [userIdentificationDisplay, setUserIdentificationDisplay] = useState(false);
 
   
-
+  
+  const screen_name =  params.parentWindow.props.navigation.state.routeName
+  //routeName
+  console.log("*** global.screen ** " ,global.screen )
+  
   useEffect(() => {
     const subscription = AppState.addEventListener("change", _handleAppStateChange);
     return () => {
@@ -17,22 +21,51 @@ const StillConnection = (params) => {
     };
   }, []);
 
-  const _handleAppStateChange = nextAppState => {
+  const _handleAppStateChange = async nextAppState => {
     if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
       console.log('App has come to the foreground!, Still Cannect');
-      setUserIdentificationDisplay(true);
+/*
+    const hearb =  await sendHeartBeat()
+    let resulta = hearb // global.login_session
+     console.log("resulta = Session.sendHeartBeat : ",resulta )
+
+     console.log("global.login_session-----------> ",global.login_session)
       //Session.recoverLoginSession();
+  */
+
+    setTimeout(() => {
+        console.log ("*** global.login_session_user_confirm :: ",global.login_session_user_confirm)
+
+
+        if( global.login_session_user_confirm) {
+          setUserIdentificationDisplay(true);
+        }else{
+          setUserIdentificationDisplay(false);
+        }
+
+    }, 1500);
+    
+
+      
     }
+
+
 
     appState.current = nextAppState;
     setAppStateVisible(appState.current);
     console.log('AppState %%%', appState.current);
   };
 
+
+  
   const onLoginfailure = () => {
     // params.parentWindow.props.navigation.goBack();
-    console.log("onLoginfailure")
+    console.log("on Loginfailure..")
     const { navigate } =  params.parentWindow.props.navigation
+    
+    setUserIdentificationDisplay(false );
+    console.log("userIdentificationDisplay::",userIdentificationDisplay )
+    global.screen = "Login"
     navigate("Login")
 }
 
@@ -45,7 +78,15 @@ const StillConnection = (params) => {
             //setUserIdentificationDisplay(false);
             
             }}
-          visible={userIdentificationDisplay}
+          visible={ userIdentificationDisplay
+          && (
+            global.screen != 'Login' &&
+            //global.screen != 'Specifications' &&
+            global.screen != 'SubmitError' &&
+            global.screen != ''
+
+          )
+        }
           animationDuration = {300}
           modalAnimation={
 
@@ -77,6 +118,7 @@ const StillConnection = (params) => {
                 style={styles.yesButton}
                 onPress={() => {
                  setUserIdentificationDisplay( false);
+                 global.login_session_user_confirm = false
                   }}
                   >
                 <Text style={styles.textStyleClose}>Yes</Text>
@@ -87,6 +129,7 @@ const StillConnection = (params) => {
                   onPress={() => {
 
                     setUserIdentificationDisplay(false );
+                    global.login_session_user_confirm = false
                     Session.logOut(global.host,global.access_token); 
                     onLoginfailure();
 

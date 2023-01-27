@@ -22,6 +22,7 @@ export default class LoginHeader extends React.Component {
 		authHelper.logOut(global.host,global.access_token);  
 		this.props._onLoadGetUsers(global.location_now.latitude,global.location_now.longitude);
 		const { navigate } = this.props.navigation
+		global.screen = "Login"
 		navigate("Login",{_onLoadGetUsers :this.props._onLoadGetUsers})
 	}
 	onBtnChangePasswordPressed = () => {

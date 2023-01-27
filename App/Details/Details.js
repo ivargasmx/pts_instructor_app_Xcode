@@ -83,13 +83,13 @@ console.log(" " , this.props.navigation.state.params.studentItem)
 	}
 	
 	onBtnBackPressed = () => {
-
+        global.screen = "Classroom"
 		this.props.navigation.goBack()
 	}
 
 	
 	onBtnAddPayPressed = () => {
-
+        global.screen = "Classroom"
 		this.props.navigation.goBack()
 	}
 

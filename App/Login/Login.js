@@ -3,7 +3,7 @@
 //  Login-
 //
 //  Created by [Author].
-//  Copyright © 2018 [Company]. All rights reserved.
+//  Copyright © 2018 [Company]. All rights reserved. 
 //
 
 import React from "react"
@@ -17,7 +17,9 @@ import Moment from 'moment';
 import * as Permissions from 'expo-permissions'; 
 import * as Location from 'expo-location';
 
-import  Modal,{SlideAnimation, ModalContent,ModalButton } from 'react-native-modals';
+import { Camera } from "expo-camera";
+
+import  Modal,{SlideAnimation, ModalContent,ModalButton } from 'react-native-modals'; 
 import "./../../global.js";
 
 import connDBHelper   from "../Helper/Dao";
@@ -26,8 +28,10 @@ import connectionHelper   from "../Helper/Connection";
 import Notifications   from "../Helper/PushNotifications";
 import ErrorHandler    from "../Helper/ErrorHandler"
 
+import LoginStates from "../Helper/LoginStates"
 
-import CountDown from 'react-native-countdown-component';
+
+import CountDown from 'react-native-countdown-component'; 
 import PINCode from '@haskkor/react-native-pincode';
 
 
@@ -40,7 +44,7 @@ import * as NotificationsKey from 'expo-notifications';
 import LoginHeader from "../Headers/LoginHeader"
 
 export default class Login extends React.Component {
-
+ 
 	static navigationOptions = ({ navigation }) => {
 	
 		const { params = {} } = navigation.state
@@ -54,6 +58,7 @@ export default class Login extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			current_screen : "Login",
 			username: '',
 			password: '',
 			password_conf: '',
@@ -81,13 +86,21 @@ export default class Login extends React.Component {
 			rememberEmailField:true, 
 			users:null,
 			pin_entered : "", 
+			appStateLogin : null,
 			location:{
 				latitude:33.46863937,  
 				longitude:0
 			},
 			locationStatus:true,
+			notificationStatus:true,
+			cameraStatus:true,
+			internetStatus:true,
+			internetFocusStatus:true,
+			connectionStatus:true,
 			_title_users:""  ,  //Select your user 
 			_showButtonCntRemember:false,
+			message_debug : "",
+
 		  };  
 		  //String.fromCharCode(67,79,68,69);
 		  //'234'.padStart(5, "0") 
@@ -97,15 +110,17 @@ export default class Login extends React.Component {
 		  		   
 	}
 
+
+
 	getLocationAsync = async () => {
 		
         console.log("start await Location.requestForegroundPermissionsAsync()")
 		let counter = 0;
-		global.logs = Moment(Date.now()).format('MMM DD YYYY hh:mm a') + " \n";
+		global.logs = global.logs + "\n\n" + Moment(Date.now()).format('MMM DD YYYY hh:mm a') + " \n";
 
 		global.time_out_counter = counter
 		let timerO = setInterval(() => {
-			console.log(counter + ' sec.');
+			console.log(counter + ' / ' + global.time_out + ' sec.. ');
             counter ++;
 			global.time_out_counter = counter
 			if (counter == global.time_out) {
@@ -113,8 +128,8 @@ export default class Login extends React.Component {
 				this.setState({_waiting : false}) 
 				console.log('Time out finish');
 				global.logs = global.logs  + " Location Time Out : " + global.time_out_counter + " sec. \n"
-
-				Toast.show("Location Time Out  " ,{
+            /*
+				Toast.show("Location Time Out  " ,{ 
 					position: Toast.position.center,
 					containerStyle:{
 						backgroundColor: '#FF8000'
@@ -129,17 +144,20 @@ export default class Login extends React.Component {
 					mask: false,
 					maskStyle:{}
 				  })
-            }
-        }, 1000);		
+				  */
+                  }
+       			 }, 1000);		
  
         global.logs = global.logs  +  " Start: Location.requestForegroundPermissionsAsync() \n"
 		let { status } = await Location.requestForegroundPermissionsAsync() ;// Permissions.askAsync(Permissions.LOCATION);
 		let location = {coords:{ latitude :0, longitude:0 }};
 	    
-		global.logs = global.logs  + " status : " + status + "  \n"
+		global.logs = global.logs  + " Location.requestForegroundPermissionsAsync status : " + status + "  \n"
         // push_notification
 		let token;
 		
+
+		////  Notification ini
 		global.logs = global.logs  + "Start  NotificationsKey.getPermissionsAsync() \n"
 		console.log("Start:  NotificationsKey.getPermissionsAsync()")
 		const { status: existingStatus } = await NotificationsKey.getPermissionsAsync();
@@ -153,25 +171,33 @@ export default class Login extends React.Component {
 			console.log("start await NotificationsKey.requestPermissionsAsync()")
 
 		  const { status } = await NotificationsKey.requestPermissionsAsync();
+		  this.setState({notificationStatus:false}) 
 		  finalStatus = status;
 		} 
 
 		if (finalStatus !== 'granted') { 
 			//alert('Failed to get push token for push notification!');
-			console.log("Failed to get push token for push notification!")
-			global.logs = global.logs  + "Failed to get push token for push notification! \n"
+			console.log("A Failed to get push token for push notification!")
+			global.logs = global.logs  + "B Failed to get push token for push notification! \n"
 			return;
 		}
+
+
+
+		// Notifycation Status
 		if( ! global.simulator){
+			console.log("Not simulator");
 			global.logs = global.logs  + " Start: NotificationsKey.getExpoPushTokenAsync() \n"
 			token = (await NotificationsKey.getExpoPushTokenAsync()).data;
 			global.logs = global.logs  + " Push Notification Token: " + token + "\n"
 			global.push_notification_key = token;
+			console.log(global.push_notification_key);
 			 // push_notification
 		}
+		///// Notification end
 
 
-		if (status !== 'granted') {
+		if (status !== 'granted') { 
 			console.log("status:",status)
 			console.log('Permission to access location was denied')
             global.logs = global.logs  + "Permission to access location was denied \n"
@@ -180,12 +206,12 @@ export default class Login extends React.Component {
 			});
 
 			this.setState({locationStatus:false})   // Show wait modal
-			// Alert.alert("Error:", 'Permission to access location was denied');
+			// Alert.alert("Error:", 'Permission to access location was denied'); 
 			//  Linking.openURL('app-settings://');
 			//  return;
 
 			location.coords.latitude = global.default_location.latitude;
-			location.coords.longitude = global.default_location.longitude
+			location.coords.longitude = global.default_location.longitude 
 
 			global.logs = global.logs  + " location.coords :" + JSON.stringify(location ,null,2) + " \n"
 
@@ -214,11 +240,11 @@ export default class Login extends React.Component {
 
 		console.log( "global.location_now ...",global.location_now);
 
-  // ojo  si son correctas insertar coordenadas en :  global.default_location
+     // ojo  si son correctas insertar coordenadas en :  global.default_location
 		this.setState({ location: {latitude, longitude}});
 		this.onLoadGetUsers(location.coords.latitude,location.coords.longitude)
 		
-	};
+	}; 
 
 
 	getGeocodeAsync= async (location) => {
@@ -226,34 +252,117 @@ export default class Login extends React.Component {
 		this.setState({ geocode})
 	  }
 
-	async componentDidMount() {
+
+	setStatusAll  = async (feature,status) => {
+		console.log("&&&&&&&&&&&&&&&  setStatusAll")
+		if(feature === 'camera')
+		    this.setState({ cameraStatus :false})
+		if(feature === 'notification')
+		    this.setState({ notificationStatus :false})
+		if(feature === 'internet')
+		    this.setState({ internetStatus :false})		 
+	    console.log("feature:" ,feature )	
+	    console.log("status:" ,status )	
+		this.forceUpdate();
+	}
+    changeStatus  = async () => {
+		this.setState({ internetFocusStatus :false})
+		global.logs = global.logs  + "\n\n > internetFocusStatus  :" + false+" \n"
+		
+	}
+
+	async realSetStatusAll (feature,status){
+
+	}
+	async permisionCameraFunction  ()  {
+		
+		const cameraPermission = await Camera.requestCameraPermissionsAsync() //.getCameraPermissionsAsync() // .requestPermissionsAsync();
+		//setCameraPermission(cameraPermission.status === 'granted');
+        this.setState({cameraStatus:cameraPermission.status === "granted"}) 
+		console.log("cameraPermission:",cameraPermission)
+		console.log("this.statuscameraStatus::",this.state.cameraStatus)
+		global.logs = global.logs  + "\n\n cameraStatus:cameraPermission.status  :" + cameraPermission.status+" \n"
+
+
+	  };
+
+
+	  
+
+async componentDidMount() {
 	
-		global.logs = "";
+		//global.logs = ""; 
+// let NetState =  await connectionHelper.isConnected();
+
+		/// Camera Status Ini
+		await this.permisionCameraFunction()
+		
+		/// Camera Status End
+
 		if(global.connection  === 0 || global.connectionTest === 0  || this.state.locationStatus == false ) {
               
-			  this.setState({_waiting: true})
+			  //this.setState({_waiting: true})
 			  let code = connDBHelper.getSecureCode();			
 			  this.setState({_folio:code});	
-			  this.setState({_warning:true});
+			  this.setState({_warning:false});
+			  this.setState({connectionStatus:false}); 
+			  this.setState({internetStatus:false}); 
+			  
+			  global.logs  =  "\n" + global.logs + "\n" +  " Net Status: Not Connected to Internet " + "\n\n"
   
 		}else{
-			this.setState({_waiting: true})
+			this.setState({_waiting: true}) 
 		}
 
-
+		await connectionHelper.isConnectedToAPI()
 
 			//		
 		await this.getLocationAsync();
+		
+		// Internet Connection
+		console.log("@@@@@");
+		console.log("***** connectionHelper.isConnected :",global.net_state)
+		global.logs  =  "\n" + global.logs + "\n Net Status(ini):" +  JSON.stringify(global.net_state ,null,2) + "\n\n"
+
+		if(! global.net_state)
+		  //   global.logs  =  "\n" + global.logs + "\n Net Status:" +  JSON.stringify(global.net_state ,null,2) + "\n\n"
+        //else
+		  global.logs  =  "\n" + global.logs + "\n" +  " Net Status: Can't get connection status (global.net_state) " + "\n\n"
+        
+		if( global.connection  === 0 || global.net_state == null  || ! global.net_state ||  this.state.connectionStatus != true  ){ //global.net_state.type  != "cellular" || 
+			
+			this.setState({internetStatus:false}); 
+		}
+               
+
+		if(  global.connection  === 0 || global.net_state == null  || ! global.net_state   ||  global.net_state.isConnected  != true)	  
+		   		 this.setState({connectionStatus:false}); 			
+		
+
 		//authHelper.logOut(global.host,global.access_token);
 		global.shift_time_id = 0;
-		connDBHelper.saveLogin("dev@phlebotomyusa.com","Phleb$123" ,111, null );
+		//connDBHelper.saveLogin("dev@phlebotomyusa.com","Phleb$123" ,111, null );
+		
+
+		//const { statusCam } = await Camera.requestCameraPermissionsAsync();
+		//this.setState({cameraStatus:statusCam !== "granted"}) 
+		//console.log("statusCam:",statusCam)
+
 
 		
 		let _timestamp = Moment(Date.now()).format('Y-MM-DD HH:mm:ss')
 		this.buildVerifyCode(_timestamp,this.state.user_email)
 		
 		
-  //this.setUserInterfface (6,"")
+			//this.setUserInterfface (6,"")
+
+	if(!this.state.cameraStatus) this.setState({notificationStatus:true})		 
+	 console.log(" ======  Status   ======")		
+	 console.log('this.state.notificationStatus::' ,this.state.notificationStatus ) 
+	 console.log('this.state.cameraStatus::' ,this.state.cameraStatus )
+	 console.log('global.net_state.type ::' ,global.net_state.type  )
+	 
+	
 	}
 	
 
@@ -705,16 +814,18 @@ export default class Login extends React.Component {
 		navigate("VideoPlayer" ) 
 	}
 
-	onGrupo171Pressed = () => {
+	 onGrupo171Pressed = async () => {
 	
 		const { navigate } = this.props.navigation
-	
+		global.screen = "Shift"
+
 		navigate("Shift",{_onLoadGetUsers:this.onLoadGetUsers})
 	}
-	onLoginSuccess = () => {
+	 onLoginSuccess = async () => {
 
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Shift"
+
 		navigate("Shift" , {_onLoadGetUsers:this.onLoadGetUsers}) 
 	}
 
@@ -723,7 +834,7 @@ export default class Login extends React.Component {
 		if(global.push_notification_key== "") global.push_notification_key ="XXXXXXX"
 
 		let url = global.host + '/api/shifts_by_coordinates?latitude=' + _latitude +'&longitude='+_longitude + "&notification_token_id="+global.push_notification_key
-  console.log("url:",url);	
+  		console.log("url:",url);	
 		
 		const timeOutList = TimerMixin.setTimeout(
 			() => { 
@@ -734,7 +845,7 @@ export default class Login extends React.Component {
 					containerStyle:{
 						backgroundColor: '#8B1936'
 					},
-					duration	: 3500	,
+					duration	: 2500	,
 					delay : 500,
 					textStyle:{
 						color:'#fff',
@@ -803,6 +914,7 @@ export default class Login extends React.Component {
 
 	showSendErrorScreen(navObj){
 		const { navigate } = navObj
+		global.screen = "SubmitError"
 		navigate("SubmitError",{_onLoadGetUsers:this.onLoadGetUsers})
 	}
     setUserInterfface = (type,extra_text) => {
@@ -949,7 +1061,8 @@ export default class Login extends React.Component {
         var _url =  global.host + '/api/auth/login_setup_pin';
 		var _body = JSON.stringify({
 				pin: pin,
-				confirm_pin:pin
+				confirm_pin:pin,
+				app_release :  Constants.manifest.version  + " (" + Constants.manifest.ios.buildNumber+")"
 		   })   ;
 		fetch(_url, {
 			method: 'POST',
@@ -2096,6 +2209,7 @@ export default class Login extends React.Component {
 									<TouchableOpacity
 										onPress={ this.loginFct}
 										style={styles.grupo171Button}>
+									{/* Button  Login AS DIFFEREN USER*/}		
 										<Text
 											style={styles.grupo171ButtonText}>LOGIN</Text>
 									</TouchableOpacity>
@@ -2377,12 +2491,13 @@ export default class Login extends React.Component {
 									   <ScrollView 
 											style={styles.viewScrollView}>
 											<ChildComponetsLogins  result={this.state.users}  nav ={this} /> 
-											
+											{global.debug_msg && <View><Text>{global.logs}</Text></View>}
 										</ScrollView>
 							       </View>
 			             </View> 			
                    }					
 		 			<View >
+			{ 	 false &&  // Cancel popup no connection		
 					<Modal
 						visible={this.state._warning}
 						onTouchOutside={() => {
@@ -2402,7 +2517,7 @@ export default class Login extends React.Component {
 									alignItems: "center",
 									width: 500 , 
 								}}>
-						  <Text style={styles.txtCantTitle} > No Internet connection detected</Text>	
+						  <Text style={styles.txtCantTitle} > No Internet connection detected.></Text>	
 
 
 							 <View
@@ -2411,7 +2526,7 @@ export default class Login extends React.Component {
 								height: 100,
 							}}/>
 
-							<Text style={styles.txtPleaseText} > If you can’t connect to the internet please try to restart the iPad. If that doesn’t work please proceed.</Text>
+							<Text style={styles.txtPleaseText} > If you can’t connect to the internet please try to restart the iPad. If that doesn’t work please proceed...</Text>
 							 
 							 <Text style={styles.txtCantText} > To clock in or clock out without Internet use your mobile phone to send an SMS with the following code to</Text>
 
@@ -2442,7 +2557,7 @@ export default class Login extends React.Component {
 						  </View>
 						</ModalContent>
 					</Modal>
-
+}
 					<Modal
 						visible={ ! this.state.locationStatus}
 						onTouchOutside={() => {
@@ -2462,7 +2577,7 @@ export default class Login extends React.Component {
 									alignItems: "center",
 									width: 500 , 
 								}}>
-						  <Text style={styles.txtCantTitle} > LOCATION </Text>	
+						  <Text style={styles.txtCantTitle} > LOCATION </Text>	 
 
 
 							 <View
@@ -2518,6 +2633,432 @@ export default class Login extends React.Component {
 						</ModalContent>
 					</Modal>
 
+
+                   {/* ::  Camera status Modal    */}
+				   <Modal
+						visible={ ! this.state.cameraStatus && global.net_state.isConnected } // global.net_state.type  !== "none" 
+						onTouchOutside={() => {
+					     this.setState({ cameraStatus: true });
+
+						}}
+						modalAnimation={new SlideAnimation({
+							slideFrom: 'bottom',
+						  })}
+					  >
+						<ModalContent >  
+	
+						  <View style={{
+									left: 0,
+									right: 0,
+									top: 0,
+									alignItems: "center",
+									width: 690 , 
+									height: 900,
+								}}>
+						 	
+
+                             <TouchableOpacity 
+							          style={styles.containerBtnLogout}
+									onPress={() => {
+									this.setState({ debug: false });	
+									}}> 
+								<Image
+									source={require("./../../assets/images/No_Camera.jpg")}
+									style={styles.imgAdvertNoNotificationsImage}/>	
+						     </TouchableOpacity> 
+							
+
+							 
+							 <View
+							    style={{
+								//width: 30,
+								height: 20,
+							 }}/>
+						 <View
+							style={{
+									backgroundColor:"transparent",
+									//width: 608,
+									marginTop: 11,
+									flexDirection: "row",
+									alignItems: "center"}
+								}>
+								    <View
+										style={{
+											flex: 1,
+									}}/>
+									<TouchableOpacity
+										onPress={() => {
+											 //this.permisionCameraFunction()
+											
+											this.setState({ cameraStatus: true });
+											}}
+										style={styles.grupo171Button}>
+										<Text
+											style={styles.grupo171ButtonText}>Close</Text>
+									</TouchableOpacity>
+									<View
+										style={{
+											flex: 1,
+										}}/>
+									
+									<TouchableOpacity
+										onPress={() =>  { 
+											this.setState({ cameraStatus: true });
+											Linking.openURL('app-settings://');
+
+											}}
+										style={styles.locationButton}>
+										<Image
+											source={require("./../../assets/images/camera.png")}
+										style={styles.imgIconLocation}/>	
+										<Text
+											style={styles.grupo171ButtonText}>Edit Settings</Text>
+									</TouchableOpacity>	
+								    <View
+										style={{
+											flex: 1, 
+									}}/>
+							</View>
+
+							<View
+							style={{
+								//width: 30,
+								//height: 30,
+								//alignItems: "flex-start",
+							}}/>
+						  </View>
+						</ModalContent>
+					</Modal>
+				   {/*  Camera Modal ::*/}
+
+
+                  {/* ::  Notification status Modal    */}
+				  <Modal
+						visible={  !this.state.notificationStatus &&  global.net_state.isConnected  } //   global.net_state.type  === "cellular"
+						//visible= {this.state.cameraStatus}
+						onTouchOutside={() => {
+					     this.setState({ notificationStatus: true });
+
+						}} 
+						modalAnimation={new SlideAnimation({
+							slideFrom: 'bottom',
+						  })}
+					  >
+						<ModalContent >  
+	
+						  <View style={{
+									left: 0,
+									right: 0,
+									top: 0,
+									alignItems: "center",
+									width: 690 , 
+									height: 900,
+								}}>
+						 	
+
+                             <TouchableOpacity 
+							          style={styles.containerBtnLogout}
+									onPress={() => {
+									this.setState({ debug: false });	
+									}}> 
+								<Image
+									source={require("./../../assets/images/No_Notifications.jpg")}
+									style={styles.imgAdvertNoNotificationsImage}/>	
+						     </TouchableOpacity> 
+							
+
+							 
+							 <View
+							    style={{
+								//width: 30,
+								height: 20,
+							 }}/>
+						 <View
+							style={{
+									backgroundColor:"transparent",
+									//width: 608,
+									marginTop: 11,
+									flexDirection: "row",
+									alignItems: "center"}
+								}>
+								    <View
+										style={{
+											flex: 1,
+									}}/>
+									<TouchableOpacity
+										onPress={() => {
+											// this.getLocationAsync();
+											this.setState({ notificationStatus: true });
+											}}
+										style={styles.grupo171Button}>
+										<Text
+											style={styles.grupo171ButtonText}>Close</Text>
+									</TouchableOpacity>
+									<View
+										style={{
+											flex: 1,
+										}}/>
+									
+									<TouchableOpacity
+										onPress={() =>  { 
+											this.setState({ notificationStatus: true });
+											Linking.openURL('app-settings://');
+
+											}}
+										style={styles.locationButton}>
+										<Image
+											source={require("./../../assets/images/notifications_bell.png")}
+										style={styles.imgIconLocation}/>	
+										<Text
+											style={styles.grupo171ButtonText}>Edit Settings</Text>
+									</TouchableOpacity>	
+								    <View
+										style={{
+											flex: 1, 
+									}}/>
+							</View>
+
+							<View
+							style={{
+								//width: 30,
+								//height: 30,
+								//alignItems: "flex-start",
+							}}/>
+						  </View>
+						</ModalContent>
+					</Modal>
+				   {/*  Notification Modal ::*/}
+
+
+				   
+
+
+                   {/* ::  Type Connection status Focus  Modal    */}
+				   <Modal
+						visible={ ! this.state.internetFocusStatus  }
+						onTouchOutside={() => {
+					     this.setState({ internetFocusStatus: true });
+
+						}}
+						modalAnimation={new SlideAnimation({
+							slideFrom: 'bottom',
+						  })}
+					  >
+						<ModalContent >  
+	
+						  <View style={{
+									left: 0,
+									right: 0,
+									top: 0,
+									alignItems: "center",
+									width: 690 , 
+									height: 900,
+								}}>
+						 	
+
+                             <TouchableOpacity 
+							          style={styles.containerBtnLogout}
+									onPress={() => {
+									this.setState({ debug: false });	
+									}}> 
+								<Image
+									source={require("./../../assets/images/Not_Connected.jpg")}
+									style={styles.imgAdvertNoNotificationsImage}/>	
+						     </TouchableOpacity> 
+							
+
+							 
+							 <View
+							    style={{
+								//width: 30,
+								height: 20,
+							 }}/>
+						 <View
+							style={{
+									backgroundColor:"transparent",
+									//width: 608,
+									marginTop: 11,
+									flexDirection: "row",
+									alignItems: "center"}
+								}>
+								    <View
+										style={{
+											flex: 1,
+									}}/>
+									<TouchableOpacity
+										onPress={() => {
+											this.setState({ internetFocusStatus: true });
+											let msg_ = "\n" + global.logs + "\n" +  "  === Try re-connect to Internet  ===" + "\n\n"
+											global.logs  =  msg_
+											console.log("msg_:" ,msg_)
+											connectionHelper.isConnected()
+											
+											
+											
+										    
+											}}
+										style={styles.grupo171Button}>
+										<Text
+											style={styles.grupo171ButtonText}>Close</Text>
+									</TouchableOpacity>
+									<View
+										style={{
+											flex: 1,  
+										}}/>
+									 
+									<TouchableOpacity 
+										onPress={() => {
+											this.setState({ internetFocusStatus: true });
+											if(global.net_state.type !== 'wifi') Linking.openURL('App-Prefs:Data'); else  Linking.openURL('App-Prefs:WIFI');
+											
+
+											}}
+										style={styles.connectionButton}>
+										<Image
+											source={require("./../../assets/images/celular_signal.png")}
+										style={styles.imgIconLocation}/>	
+										<Text
+											style={styles.grupo171ButtonText}>Edit Settings</Text>
+									</TouchableOpacity>	
+								    <View 
+										style={{
+											flex: 1, 
+									}}/>
+							</View>
+
+							<View
+							style={{
+								//width: 30,
+								height: 20,
+								//alignItems: "flex-start",
+							}}/>
+							<Text style={styles.txtCantSubSubTitleText} > Status : {(this.state.connectionStatus? "Connected, ":"Disonnected, " ) }  Connected to: {global.net_state.type} </Text>	
+							
+
+							
+						  </View>
+						</ModalContent>
+					</Modal>
+				   {/*  Type Connection Focus  Modal ::*/}
+
+
+
+                   {/* ::  Type Connection status Modal    */}
+				   <Modal
+						visible={ ! this.state.internetStatus  }
+						onTouchOutside={() => {
+					     this.setState({ internetStatus: true });
+
+						}}
+						modalAnimation={new SlideAnimation({
+							slideFrom: 'bottom',
+						  })}
+					  >
+						<ModalContent >  
+	
+						  <View style={{
+									left: 0,
+									right: 0,
+									top: 0,
+									alignItems: "center",
+									width: 690 , 
+									height: 900,
+								}}>
+						 	
+
+                             <TouchableOpacity 
+							          style={styles.containerBtnLogout}
+									onPress={() => {
+									this.setState({ debug: false });	
+									}}> 
+								<Image
+									source={require("./../../assets/images/Not_Connected.jpg")}
+									style={styles.imgAdvertNoNotificationsImage}/>	
+						     </TouchableOpacity> 
+							
+
+							 
+							 <View
+							    style={{
+								//width: 30,
+								height: 20,
+							 }}/>
+						 <View
+							style={{
+									backgroundColor:"transparent",
+									//width: 608,
+									marginTop: 11,
+									flexDirection: "row",
+									alignItems: "center"}
+								}>
+								    <View
+										style={{
+											flex: 1,
+									}}/>
+									<TouchableOpacity
+										onPress={() => {
+											let msg_ = "\n" + global.logs + "\n" +  "  === Try re-connect to Internet  ===" + "\n\n"
+											global.logs  =  msg_
+											console.log("msg_:" ,msg_)
+											connectionHelper.isConnected()
+											
+											//this.componentDidMount()
+											//this.setState({ internetStatus: true });
+											this.setState({ internetStatus: true });
+										    
+											}}
+										style={styles.grupo171Button}>
+										<Text
+											style={styles.grupo171ButtonText}>Close</Text>
+									</TouchableOpacity>
+									<View
+										style={{
+											flex: 1,  
+										}}/>
+									 
+									<TouchableOpacity 
+										onPress={() => {
+											// seting = 'App-Prefs:WIFI'
+											//this.setState({ internetStatus: true });
+											//Linking.openURL('app-settings:{2}');
+											//Linking.openURL('App-Prefs:Bluetooth');
+											// Linking.openURL('App-Prefs:CellularData');
+											// Linking.openURL('App-Prefs:root=CellularData');
+											//Linking.openURL('App-Prefs:INTERNET_TETHERING');
+											this.setState({ internetStatus: true });
+											if(global.net_state.type !== 'wifi') Linking.openURL('App-Prefs:Data'); else  Linking.openURL('App-Prefs:WIFI');
+											//com.phlebotomy.trainingmanager 
+
+											}}
+										style={styles.connectionButton}>
+										<Image
+											source={require("./../../assets/images/celular_signal.png")}
+										style={styles.imgIconLocation}/>	
+										<Text
+											style={styles.grupo171ButtonText}>Edit Settings</Text>
+									</TouchableOpacity>	
+								    <View 
+										style={{
+											flex: 1, 
+									}}/>
+							</View>
+
+							<View
+							style={{
+								//width: 30,
+								height: 20,
+								//alignItems: "flex-start",
+							}}/>
+							<Text style={styles.txtCantSubSubTitleText} > Status : {(this.state.connectionStatus? "Connected, ":"Disonnected, " ) }  Connected to: {global.net_state.type} </Text>	
+							
+
+							
+						  </View>
+						</ModalContent>
+					</Modal>
+				   {/*  Type Connection Modal ::*/}
+
+
                    {/* No Can'Login  , new feature*/}
 					<Modal
 						visible={this.state._modalNotLogin}
@@ -2547,7 +3088,7 @@ export default class Login extends React.Component {
 								height: 100,
 							}}/>
 
-							<Text style={styles.txtPleaseText} > If you can’t connect to the internet please try to restart the iPad. If that doesn’t work please proceed.</Text>
+							<Text style={styles.txtPleaseText} > If you can’t connect to the internet please try to restart the iPad. If that doesn’t work please proceed..</Text>
 							 
 							 <Text style={styles.txtCantText} > To clock in or clock out without Internet use your mobile phone to send an SMS with the following code to</Text>
 
@@ -2602,7 +3143,12 @@ export default class Login extends React.Component {
 				   		<SubmitErrorButton callbackFunction={this.showSendErrorScreen} nav={this.props.navigation}/>
 					</View>
 					
-			</View>
+				<LoginStates 
+				  functionCheckStatus = {this.setStatusAll}
+				  functionSetConection =  {this.changeStatus}
+				></LoginStates>		
+				
+			</View> 
 			</ImageBackground>	
 	}
     
@@ -2819,7 +3365,8 @@ export default class Login extends React.Component {
 
 		let body_data = JSON.stringify({
 			email: username.trim(),
-			pin: pin 
+			pin: pin ,
+			app_release :  Constants.manifest.version  + " (" + Constants.manifest.ios.buildNumber+")"
 		  })
 	
 	
@@ -2936,8 +3483,8 @@ export default class Login extends React.Component {
 		  );
 	}
 		
-loginFct = () =>{ 
-
+ loginFct = async () =>{ 
+                let xx =  await connectionHelper.isConnected();
 		        if(global.nologin === 1 ) {
 
 					this.setState({
@@ -2948,6 +3495,7 @@ loginFct = () =>{
 					});
 
 				}
+
 				if(this.state.username.trim()  == ''  ){
 				  
 				  Alert.alert(
@@ -2975,11 +3523,50 @@ loginFct = () =>{
 				  return ;
 				}
 		
-
+				await connectionHelper.isConnectedToAPI()
+				
+				global.logs  =  "\n" + global.logs + "\n" +  " Try Login , global.connection: " + global.connection +"\n\n"
 				if(global.connection !== 1) {
 					var passed = false;
-					connDBHelper.localLogin(this.state.username.trim(),this.state.password.trim(),this ) ;
-                   return;
+					//connDBHelper.localLogin(this.state.username.trim(),this.state.password.trim(),this ) ;
+                  // return; 
+				}
+
+
+				if( global.connection != 1) {
+					global.logs = global.logs  +  " \n \n Network request failed, 'No internet connection'  \n \n"
+					this.setState({internetStatus:false});  
+
+					const timeOutList = TimerMixin.setTimeout(
+						() => { 
+							console.log('I do not leak!');
+							
+							Toast.show("Network request failed, 'No internet connection' " ,{
+								position: Toast.position.center,
+								containerStyle:{
+									backgroundColor: '#8B1936'
+								},
+								duration	: 3500	,
+								delay : 500,
+								textStyle:{
+									color:'#fff',
+								   },
+								imgSource: null,
+								imgStyle: {},
+								mask: false,
+								maskStyle:{}
+							  })
+
+							  console.log("no internet connection")
+							 
+			
+							return;
+						},
+						12000
+					  ); 	
+					  
+					  
+					return;
 				}
 
 				if(global.debug){
@@ -3002,7 +3589,8 @@ loginFct = () =>{
 
 				let body_data = JSON.stringify({
 					email: this.state.username.trim(),
-					password: this.state.password.trim() 
+					password: this.state.password.trim() ,
+					app_release :  Constants.manifest.version  + " (" + Constants.manifest.ios.buildNumber+")"
 				  })
 			
 	
@@ -3034,115 +3622,120 @@ loginFct = () =>{
 						return;
 					},
 					12000
-				  ); 		
+				  ); 	
+				// xxx  	
                 let _url = global.host + '/api/auth/login';
-				fetch(_url,{
-					method: 'POST',
-					headers: {
-					   'Accept': 'application/json',
-					   'Content-Type': 'application/json', 
-					   "cache-control": "no-cache"
-					   
-					},
-					body: body_data
-				   
-				  }).then((response) =>  response.text()) //response.json())
-					.then((responseData) =>
-						 {
-							 console.log("responseData::",responseData)
-							 global.logs = ErrorHandler.setMessageResponse( "",body_data,responseData,"response","",_url,global.id,global.name ,global.email);
-							 TimerMixin.clearTimeout(timeOutLogin);
-						   this.setState({_waiting : false})
-						   try {
-							   var responseTXT = responseData;
-							   var responseJSON = JSON.parse (responseTXT);
-							   this.setState({
-								   data :responseJSON
-							   });
-								
-		   
-								   if(responseJSON['access_token'] !== undefined) 
-								   {
+                console.log("Before Login fetch, global.connection: ",global.connection)
+				if(global.connection === 1)
+				{
+						fetch(_url,{
+							method: 'POST',
+							headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json', 
+							"cache-control": "no-cache"
 							
-									   this.setState({
-										   authenticated :1,
-										   password:"",
-										   password_conf:"",
-									   });
+							},
+							body: body_data
+						
+						}).then((response) =>  response.text()) //response.json())
+							.then((responseData) =>
+								{
+									console.log("responseData::",responseData)
+									global.logs = ErrorHandler.setMessageResponse( "",body_data,responseData,"response","",_url,global.id,global.name ,global.email);
+									TimerMixin.clearTimeout(timeOutLogin);
+								this.setState({_waiting : false})
+								try {
+									var responseTXT = responseData;
+									var responseJSON = JSON.parse (responseTXT);
+									this.setState({
+										data :responseJSON
+									});
+										
+				
+										if(responseJSON['access_token'] !== undefined) 
+										{
+									
+											this.setState({
+												authenticated :1,
+												password:"",
+												password_conf:"",
+											});
 
 
-									   global.access_token = responseJSON['access_token'];
-									   global.token_type = responseJSON['token_type'];
-									   global.expires_at = responseJSON['expires_at'];
-									   global.foto = responseJSON['foto'];
-									   global.email = this.state.username.trim();
-									   global.user_id = responseJSON['user_id'];
-		
-									   connDBHelper.saveLogin(this.state.username.trim(),this.state.password.trim() ,responseJSON['user_id'], String(responseJSON['login_time']));
-									   
-									   if( ! responseJSON['has_pin'] )	{
-										  this.setUserInterfface (6,"")
-										  return
-								       }  
-									   this.onLoginSuccess();
-							           this.setUserInterfface (1,"")
-								   }else{
-									   this.setState({
-										   authenticated :0
-									   });
-									   if(responseJSON['data'] === 'noactivo'){
-										   Alert.alert( 'Attention !', responseJSON['message']);
-										   return;
-									   }
-									   this.setState({
-										  _showButtonCntRemember :true
-									   });
-                                       /*
-									   // SMS by Login CASE
-									   this.setState({
-										  user_interface_type : 10
-										});
-										
-										*/
-                                       
-									  /*  Coment dis Alert when activate SMS by Login */	
-									   Alert.alert("Authentication failed "," Incorrect email or password", [{
-										text: "Cancel",
-										style: "cancel",
-										onPress: () => {
-											},
-											}, {
-												text: "OK",
-												onPress: () => {
-
-												},
-											}]);
-										
-										
+											global.access_token = responseJSON['access_token'];
+											global.token_type = responseJSON['token_type'];
+											global.expires_at = responseJSON['expires_at'];
+											global.foto = responseJSON['foto'];
+											global.email = this.state.username.trim();
+											global.user_id = responseJSON['user_id'];
+				
+											connDBHelper.saveLogin(this.state.username.trim(),this.state.password.trim() ,responseJSON['user_id'], String(responseJSON['login_time']));
+											
+											if( ! responseJSON['has_pin'] )	{
+												this.setUserInterfface (6,"")
+												return
+											}  
+											this.onLoginSuccess();
+											this.setUserInterfface (1,"")
+										}else{
+											this.setState({
+												authenticated :0
+											});
+											if(responseJSON['data'] === 'noactivo'){
+												Alert.alert( 'Attention !', responseJSON['message']);
+												return;
+											}
+											this.setState({
+												_showButtonCntRemember :true
+											});
+											/*
+											// SMS by Login CASE
+											this.setState({
+												user_interface_type : 10
+												});
 												
-								   }
-						   } catch (e) {
-							   console.log(e);
-							   this.setState({
-								   authenticated :0
-							   });
-							   Alert.alert("Error:", "Problems connecting to the Server.");
-							   this.setState({_waiting : false})
-							   return;
-		
-						   }  
-						}).catch((error) => {
-							
-						  //dispatch(error('There was a problem with the request.'));
-						  console.log(error);	 
-						  console.error(error);
-						  this.setState({
-							 authenticated :0
-						   });
-						   this.setState({_waiting : false})
-						});
-		
-			  } 
+												*/
+											
+											/*  Coment dis Alert when activate SMS by Login */	
+											Alert.alert("Authentication failed "," Incorrect email or password", [{
+												text: "Cancel",
+												style: "cancel",
+												onPress: () => {
+													},
+													}, {
+														text: "OK",
+														onPress: () => {
+
+														},
+													}]);
+												
+												
+														
+										}
+								} catch (e) {
+									console.log(e);
+									this.setState({
+										authenticated :0
+									});
+									Alert.alert("Error:", "Problems connecting to the Server.");
+									this.setState({_waiting : false})
+									return;
+				
+								}  
+								}).catch((error) => {
+									
+								//dispatch(error('There was a problem with the request.'));
+								console.log(error);	 
+								console.error(error);
+								this.setState({
+									authenticated :0
+								});
+								this.setState({_waiting : false})
+								});
+				
+					} // End If 
+				}	
 
 }
 
@@ -3223,6 +3816,14 @@ export class ChildComponetsLogins extends React.Component{
 
 
 const styles = StyleSheet.create({
+
+    imgAdvertNoNotificationsImage: {
+		resizeMode: "contain",
+		backgroundColor: "transparent",
+		//width: 600, 
+		height: 790,
+		//marginTop: 9,
+	},
 	passwordTitleTxt: {
 		color: "#8B1936",
 		fontFamily: "Montserrat-Regular",
@@ -3761,6 +4362,20 @@ const styles = StyleSheet.create({
 		height: 40,
 		width :193,
 	},
+	connectionButton: {
+		backgroundColor: "#0A60FE",
+		borderRadius: 25,
+		shadowColor: "rgba(255, 45, 102, 0.72)",
+		shadowRadius: 3,
+		shadowOpacity: .5,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		alignSelf:"center",
+		padding: 0,
+		height: 40,
+		width :240,
+	},	
 	locationButton: {
 		backgroundColor: "#0A60FE",
 		borderRadius: 25,

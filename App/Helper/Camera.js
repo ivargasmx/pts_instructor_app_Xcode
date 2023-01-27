@@ -32,8 +32,9 @@ export default function App( params) {
   }, []);
 
   const onCameraReady = () => {
-    console.log("setIsCameraReady = > true");
+    console.log("setIsCameraReady = > true;");
     setIsCameraReady(true);
+    
   };
 
   const takePicture = async () => {
@@ -112,8 +113,12 @@ export default function App( params) {
     setImageSource("");    
     params.parentWindow.props.navigation.goBack();    
 
-
+    
   }; 
+
+ const saveImage =  params.imageButtonSave  ? params.imageButtonSave : require("./../../assets/images/save_picture.png")
+
+ console.log("saveImage:",saveImage)
 
 //closeButton
   const renderCancelPreviewButton = () => (
@@ -132,8 +137,9 @@ export default function App( params) {
             flex: 2.5,    
     }}/>
         <TouchableOpacity disabled={!isCameraReady} onPress={savePreview}>
+         
             <Image 
-                source={require("./../../assets/images/save_picture.png")}
+                source={saveImage}
                 style={styles.buttonCancelpreview}/>
         </TouchableOpacity>
         <View
@@ -233,6 +239,7 @@ export default function App( params) {
           console.log("cammera error", error);
         }}
       />
+       
       <View style={styles.container}>
         {isVideoRecording && renderVideoRecordIndicator()}
         {videoSource && renderVideoPlayer()}

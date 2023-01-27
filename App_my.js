@@ -222,6 +222,8 @@ export default class App extends React.Component {
 				  });
 			}else{
                 console.log("............."+state.type+"......" )
+
+				/*
 				if(state.type == "wifi"){
 					Toast.show("\nYou are connected to a Wi-Fi network. Please make sure Wi-Fi is off.",{
 						position: 140,						
@@ -238,7 +240,7 @@ export default class App extends React.Component {
 						maskStyle:{}
 					  })
 				}   
-
+				*/
 			}
 	
 			if(global.connectionTest === 0  ) return 0; 

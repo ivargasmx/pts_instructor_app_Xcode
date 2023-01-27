@@ -85,6 +85,7 @@ export default class ShiftHeader extends React.Component {
 	    this.props._onLoadGetUsers(global.location_now.latitude,global.location_now.longitude);  		
 		const { navigate } = this.props.navigation
 		global.logs = "";
+		global.screen = "Login"
 		navigate("Login",{_onLoadGetUsers :this.props._onLoadGetUsers})
 	}
 

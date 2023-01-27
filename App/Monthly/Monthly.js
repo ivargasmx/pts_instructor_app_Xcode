@@ -38,6 +38,7 @@ export default class Monthly extends React.Component {
 
 	onLoginfailure = () => {
 		const { navigate } = this.props.navigation
+		global.screen = "Login"
 		navigate("Login",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -265,6 +266,7 @@ export default class Monthly extends React.Component {
 		global.current_week_end = global.current_week_end_orig ;
 		global.current_week_start = global.current_week_start_orig ;
 		const { navigate } = this.props.navigation
+		global.screen = "Shift"
 		navigate("Shift",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -274,7 +276,7 @@ export default class Monthly extends React.Component {
 		global.current_week_end = global.current_week_end_orig ;
 		global.current_week_start = global.current_week_start_orig ;
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Weekly"
 		navigate("Weekly",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers})
 	}
 
@@ -690,10 +692,16 @@ export class ChildElementShifts extends React.Component{
 											source={imgIcon}
 											style={styles.imgIcoTimeWImage}/>
 										<Text
-											style={styles.txtTimeWText}>{objectItem.class_time}</Text>
+											style={[ objectItem.is_assigned == 0 ? styles.txtTimeWTextWD: styles.txtTimeWText]}
+											>
+												{objectItem.class_time}</Text>
 									</View>
-									<Text
-										style={styles.txtClassWText}>Class #{objectItem.class_number}</Text>
+									
+										<Text
+											style={styles.txtClassWText}>Class #{objectItem.class_number} </Text>
+										<Text
+											style={styles.txtDefaultWText}> {objectItem.is_assigned == 0 ? "(Default)":""}</Text>
+								
 									<Text
 										style={styles.txtStudensWText}>{objectItem.students_count} Students</Text>
 								</View>
@@ -733,10 +741,14 @@ export class ChildElementShifts extends React.Component{
 										source={require("./../../assets/images/grupo-49.png")}
 										style={styles.imgIcoTimeBImage}/>
 									<Text
-										style={styles.txtTimeBText}> {objectItem.class_time}</Text>
+										style={[ objectItem.is_assigned == 0 ? styles.txtTimeBTextWD: styles.txtTimeBText]}
+
+										> {objectItem.class_time}</Text>
 								</View>
 								<Text
 									style={styles.txtClassBText}>Class #{objectItem.class_number}</Text>
+								<Text
+											style={styles.txtDefaultBText}> {objectItem.is_assigned == 0 ? "(Default)":""}</Text>	
 								<Text
 									style={styles.txtStudensBText}>{objectItem.students_count} Students</Text>
 							</View>
@@ -1161,16 +1173,29 @@ const styles = StyleSheet.create({
 		width: 16,
 		height: 16,
 	},
-	txtTimeWText: {
+	txtTimeWTextWD: {
 		backgroundColor: "transparent",
 		color: "rgb(39, 39, 39)",
 		fontFamily: "Montserrat-Regular",
-		fontSize: 12,
+		fontSize: 11,
 		fontStyle: "normal",
 		fontWeight: "normal",
 		textAlign: "left",
 		flex: 1,
 		marginLeft: 2,
+		top:-3,
+	},
+	txtTimeWText: {
+		backgroundColor: "transparent",
+		color: "rgb(39, 39, 39)",
+		fontFamily: "Montserrat-Regular",
+		fontSize: 11,
+		fontStyle: "normal",
+		fontWeight: "normal",
+		textAlign: "left",
+		flex: 1,
+		marginLeft: 4,
+		//top:-6,
 	},
 	txtClassWText: {
 		backgroundColor: "transparent",
@@ -1183,6 +1208,22 @@ const styles = StyleSheet.create({
 		width: 111,
 		marginLeft: 4,
 		marginTop: 1,
+	},
+
+		txtDefaultWText: {
+		backgroundColor: "transparent",
+		color: "rgb(39, 39, 39)",
+		fontFamily: "Montserrat-Regular",
+		fontSize: 9,
+		fontStyle: "normal",
+		fontWeight: "normal",
+		textAlign: "left",
+		//width: 110,
+		marginLeft: 5,
+		//marginTop: 14,
+		position: "absolute",
+		left: 16,
+		top:39,
 	},
 	txtStudensWText: {
 		backgroundColor: "transparent",
@@ -1466,19 +1507,33 @@ const styles = StyleSheet.create({
 	imgIcoTimeBImage: {
 		resizeMode: "stretch",
 		backgroundColor: "transparent",
-		width: 16,
-		height: 15,
+		width: 14,
+		height: 14,
+		left :-2
 	},
 	txtTimeBText: {
 		color: "white",
 		fontFamily: "Montserrat-Regular",
-		fontSize: 12,
+		fontSize: 11,
 		fontStyle: "normal",
 		fontWeight: "normal",
 		textAlign: "left",
 		backgroundColor: "transparent",
 		alignSelf: "flex-start",
-		marginLeft: 6,
+		marginLeft: -2,
+	},
+	txtTimeBTextWD: {
+		color: "white",
+		fontFamily: "Montserrat-Regular",
+		fontSize: 11,
+		fontStyle: "normal",
+		fontWeight: "normal",
+		textAlign: "left",
+		backgroundColor: "transparent",
+		alignSelf: "flex-start",
+		marginLeft: -2,
+		top:-5,
+
 	},
 	txtClassBText: {
 		color: "white",
@@ -1490,6 +1545,21 @@ const styles = StyleSheet.create({
 		backgroundColor: "transparent",
 		marginLeft: 4,
 		marginTop: 1,
+	},
+	txtDefaultBText: {
+		backgroundColor: "transparent",
+		color: "white",
+		fontFamily: "Montserrat-Regular",
+		fontSize: 9,
+		fontStyle: "normal",
+		fontWeight: "normal",
+		textAlign: "left",
+		//width: 104,
+		//marginLeft: 5,
+		//marginTop: 14,
+		position: "absolute",
+		left : 16,
+		top:36,
 	},
 	txtStudensBText: {
 		backgroundColor: "transparent",

@@ -29,11 +29,12 @@ import connectionHelper from "../Helper/Connection";
 import ShiftHeader from "../Headers/ShiftHeader"
 import ErrorHandler    from "../Helper/ErrorHandler"
 import Session from "../Helper/Sessions"
-import AppStates from "../Helper/AppStates"
-import StillConnection from "../Helper/StillConnection"
-//import BackgroundTask from "../Helper/BackgroundTask"
-import BackgrounFetchTask from "../Helper/BackgrounFetchTask"
 
+
+//import BackgroundTask from "../Helper/BackgroundTask"
+// import BackgrounFetchTask from "../Helper/BackgrounFetchTask"
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
 
 import "./../../global.js";
 
@@ -60,6 +61,7 @@ export default class Classroom extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state={
+		  current_screen : "Classroom",
 		  animation : new Animated.Value(0),
 		  moveAnimation: new Animated.Value(0),
 		  moveAnimationR: new Animated.Value(0),
@@ -107,6 +109,8 @@ export default class Classroom extends React.Component {
 		  lastItem : null,
 		  ratingNote:"",
 		  showNotInClassroomTitles :true,
+		  evidencePicture:null,
+		  pictureB64:null,
 
 		} 
 
@@ -170,6 +174,7 @@ export default class Classroom extends React.Component {
 
 		this._setOut()
 		this._setOutR()
+		global.screen = "Shift"
 		this.props.navigation.goBack()
 		
 	}
@@ -224,7 +229,7 @@ export default class Classroom extends React.Component {
 		}
 		this._move =! this._move
 	}
-
+// xxx
 	_setIni = () => {
 		
 		Animated.timing(this.state.moveAnimation, {
@@ -234,6 +239,9 @@ export default class Classroom extends React.Component {
 
 		}).start();
 		this._move =! this._move ;
+console.log("this._move::",this._move)
+console.log("this.state.showBtnBack::",this._move)
+console.log("this.state._waitingclock::",false)
 		this.setState({showBtnBack: this._move})
 
 		this.setState({_waitingclock : false})
@@ -275,6 +283,7 @@ export default class Classroom extends React.Component {
 			
 			return;
 		 }else{
+			global.screen ="InjuredPersonDetails"
 			 navigate("InjuredPersonDetails",{_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers});
 		 }
 		 
@@ -568,7 +577,7 @@ console.log("course_date_id",course_date_id)
 						
 						   let responseTXT = responseData;
 						   let responseJSON = JSON.parse (responseTXT); 
-
+console.log("responseData ******* ",responseData)
 						 if(responseJSON['success'] !== undefined) {
 							  this.classroomHandle(responseJSON,0,course_date_id);
 							 //connDBHelper.getLocalClockInIni(course_date_id,global.user_id,this);
@@ -1022,12 +1031,63 @@ console.log("course_date_id",course_date_id)
 		this._move =false;
 		this.setState({_waitingclock : true})			
 	}
-
+ //xxx
 	onBackBttnBack = () => {
 		this.setState({showBtnBackLook:true})
+		console.log("this.state.showBtnBackLook::",true)
 	}
+
+	onTakePicturePress = () => {
+		console.log("onTakePicturePress");
+		const { navigate } = this.props.navigation
+		
+		navigate("TakePicture", {parentPage:this,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers,imageSaveButton:require("./../../assets/images/clockinButton.png") });
+console.log("require:::::",require("./../../assets/images/clockinButton.png"))
+	} 
+ //xxx
+  addPicture = async (pictureFile) => {
+		let pass = null ;
+		this.setState({evidencePicture:pictureFile})
+		console.log(pictureFile)
+		if(pictureFile){
+            const manipResizeResult = await ImageManipulator.manipulateAsync(
+                pictureFile,                [ { resize: {width:800} }],                { compress: 0.70, format: ImageManipulator.SaveFormat.JPEG, base64:true }
+            );
+            pass = manipResizeResult.base64;
+            
+			const dirInfo =  FileSystem.getInfoAsync(pictureFile);
+			if (dirInfo.exists) {
+				 FileSystem.deleteAsync(pictureFile);
+			}
+			this.setState({pictureB64:pass})
+
+		 if( ! pass ) {
+				Alert.alert(
+					'Attention !',
+					'Take a picture of the class room before Clock In .',
+					[
+					{text: 'OK', onPress: () => console.log('OK Pressed')},
+					],
+					{cancelable: false},
+				);
+				return;
+		 }
+         
+		 this.onClockIn();
+		 this.onArrowBackButtonPressed()
+		 //this.setState({_waitingclock:false})
+
+
+         } 
+		
+		 
+
+	  }
+
+
 	onLoginfailure = () => {
 		const { navigate } = this.props.navigation
+		global.screen = "Login"
 		navigate("Login")
 	}
 
@@ -1091,7 +1151,7 @@ console.log("course_date_id",course_date_id)
 
 		/// this.updateClassLocation(); // Send Location no more
 		
-		
+		global.screen = "ClockOut"
 		navigate("ClockOut" ,{course: this.state._course,context:this,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers} )
 
 	}
@@ -1134,7 +1194,7 @@ console.log("course_date_id",course_date_id)
 
 	onClockInButtonPressed = () => {
 		    
-		
+		console.log("this._move::",this._move);
 		if (this.state.permissionsLocationsOk !== 'granted') {
 			 console.log("Location errorMessage:" ,'Permission to access location was denied');	
 			 this.setState({ location_permissions_visible_mod: true }); 
@@ -1161,8 +1221,8 @@ console.log("course_date_id",course_date_id)
 		console.log("---- Distance radius::",global.distanceOut);
 		console.log("---- Current Distance ::",pdis);
 
-     // No option, Send location always
-	/*
+		// No option, Send location always
+		/*
 		if(pdis >= global.distanceOut ) {
 			this.setState({ visible_mod_notLocation: true });// // Show PopUp No in the Classroom 
 			this.setState({ clockType: "clockin" });
@@ -1193,6 +1253,7 @@ console.log("course_date_id",course_date_id)
 	
 			//this._move = true	
 	}
+	//xx
 	_setOut = () => {
 		
 		if(this._move){
@@ -1211,6 +1272,10 @@ console.log("course_date_id",course_date_id)
 		}
 		this._move =! this._move
 		
+console.log("this._move::",this._move)
+console.log("this.state.showBtnBack::",!this.state.showBtnBack)
+console.log("this.state._waitingclock::",true)
+
 		this.setState({showBtnBack: !this.state.showBtnBack})
 		this.setState({_waitingclock : true})
 	}
@@ -1224,12 +1289,13 @@ console.log("course_date_id",course_date_id)
 	onDetailStudentPressed = (item) => {
 
 		const { navigate } = this.props.navigation	
+		global.screen = "Details"
 		navigate("Details", {header:this.state._course,icon:imgIcon,studentItem:item.student, course : this.state.data.course , shift:this.state.data.shift,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers} )// {course : this.state._course} )
 	}
 	onDetailMakeUpPressed = (item) => {
 
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Details"
 		navigate("Details", {header:this.state._course,icon:imgIcon,studentItem:item.makeup_student, course : this.state.data.course , shift:this.state.data.shift,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers} )// {course : this.state._course} )
 	}
 	
@@ -1262,7 +1328,7 @@ console.log("course_date_id",course_date_id)
 		
 	
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Details"
 		navigate("Details", {header:this.state._course,icon:imgIcon,studentItem:item.returning_student, course : this.state.data.course , shift:this.state.data.shift,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers} )// {course : this.state._course} )
 	}	
 
@@ -1287,6 +1353,7 @@ console.log("course_date_id",course_date_id)
 				  break;
 				case 'clockout':
 					const { navigate } = this.props.navigation
+					global.screen = "ClockOut"
 					navigate("ClockOut" ,{course: this.state._course,context:this,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers} )
 				  break;
 				case 'clockoutlunch':
@@ -1304,14 +1371,21 @@ console.log("course_date_id",course_date_id)
  onPressBtnClockOutModal = () => {
 	const { navigate } = this.props.navigation
 	this.setState({showBtnBack: true})
+	global.screen = "ClockOut"
 	navigate("ClockOut" ,{course: this.state._course,context:this,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers} )
 }
 
 clockOutLunch = () => {
  
 		let shift_id = this.state._course.id;
-		let	objectClockOut = {shift_time_id:global.shift_time_id, device_setup:0,latitude:(this.state.location ? this.state.location.latitude :0)
-			,longitude:(this.state.location ? this.state.location.longitude :0),checklist:[], lunch:1,city_id:global.city_id } ;
+		let	objectClockOut = {shift_time_id:global.shift_time_id, device_setup:0,
+			//latitude:(this.state.location ? this.state.location.latitude :0)
+			latitude: this.state.location.latitude 
+			//,longitude:(this.state.location ? this.state.location.longitude :0),
+			,longitude: this.state.location.longitude ,
+			checklist:[], lunch:1,city_id:global.city_id } ;
+       
+
 
 		//global.logs = "Clock -OUT LUNCH (objectClockOut): " + JSON.stringify(objectClockOut) + "\n";
 
@@ -1327,6 +1401,20 @@ clockOutLunch = () => {
 			);
 			return;
 		}
+
+		if(! this.state.location.latitude || ! this.state.location.longitude 
+			|| this.state.location.latitude == 0 ||  this.state.location.longitude == 0  ){
+			Alert.alert(
+				'Attention !',
+				'Check permission to access location and try again.',
+				[
+				{text: 'OK', onPress: () => console.log('OK Pressed')},
+				],
+				{cancelable: false},
+			);
+			return;
+		 }
+		 
 		console.log(objectClockOut);
 
 		if( global.connection !== 1) {
@@ -1467,9 +1555,13 @@ clockOutLunch = () => {
 	onClockIn = () => { // 
 		let shift_time_id = 0;
 		//console.log(global.user_id); return;
-		var	objectAtt = {assignment_id:this.state.data.shift_id,device_setup:0,latitude:this.state.locationCityLatitude,longitude:this.state.locationCityLongitude,city_id:global.city_id } ;
+
+		var	objectAtt = {assignment_id:this.state.data.shift_id,device_setup:0,latitude:this.state.locationCityLatitude,longitude:this.state.locationCityLongitude
+			,city_id:global.city_id }; //, clockin_picture:this.state.pictureB64 } ;
+
+			if(this.state.pictureB64 !=null) objectAtt.clockin_picture =  this.state.pictureB64;
 		
-		connDBHelper.saveClock(this.state.data.shift_id,shift_time_id, this.state.course_date_id, global.user_id,0,this.state.instructor_id,1,JSON.stringify(objectAtt));
+		//connDBHelper.saveClock(this.state.data.shift_id,shift_time_id, this.state.course_date_id, global.user_id,0,this.state.instructor_id,1,JSON.stringify(objectAtt));
 		
 		//global.logs = " Clock -IN (objectAtt): " + JSON.stringify(objectAtt) + "\n";
 		
@@ -1518,6 +1610,7 @@ clockOutLunch = () => {
 						let responseJSON = JSON.parse (responseTXT); 
 						
 
+
 	
 						if(responseJSON['success'] !== undefined) {
 								if(responseJSON['success'] === true){   
@@ -1544,7 +1637,13 @@ clockOutLunch = () => {
 									);
 									
 								}
-						}  
+						}  else{
+							Alert.alert("Error:", "Problems response to the Server. Please try again later.");
+							
+							console.log("responseData::" ,responseData);
+							return;
+							
+						}
 						
 						if(responseJSON['message'] !== undefined && responseJSON['message']  === "Unauthenticated.") {
 								Alert.alert(
@@ -1700,7 +1799,8 @@ clockOutLunch = () => {
 		}
 
 		onLoginfailure = () => {
-			const { navigate } = this.props.navigation
+			const { navigate } = this.props.
+			global.screen = "Login"
 			navigate("Login")
 		}
 
@@ -1814,6 +1914,7 @@ clockOutLunch = () => {
 
 		onLoginfailure = () => {
 			const { navigate } = this.props.navigation
+			global.screen = "Login"
 			navigate("Login")
 		}
 
@@ -2099,7 +2200,7 @@ clockOutLunch = () => {
 		const { navigate } = this.props.navigation
 	
 		if(this.state.data.shift )
-
+		   global.screen = "Specifications"
 		   navigate("Specifications",{ header: this.state.data.shift ,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers});
 	  }
     onPressPopupExResultButton = (option) => {
@@ -2116,7 +2217,7 @@ clockOutLunch = () => {
 
 	showSendErrorScreen(navObj){
 		const { navigate } = navObj
-		
+	    global.screen = "SubmitError"
 		navigate("SubmitError",{_onLoadGetUsers :this.nav.state.params._onLoadGetUsers })
 	}
 	
@@ -2133,6 +2234,56 @@ clockOutLunch = () => {
 		}else{
 		  paddingLeftExtra = {flex: 9.5, }
 		}   
+       const popupEvidence = (this.state.clock === 0) &&  global.required_clockin_pictures &&
+	   <ModalContent style={styles.viewModalContenTekeEvidence}  >
+            <View>
+               <Text style={styles.txtTitleText} > 
+			      Please take a picture of the class room. This will help us see the conditions of the class room before class.
+               </Text>
+            </View>
+            <View 
+              style={styles.ClockInLocationText}>
+             
+              <View style={styles.viewPopUpLineTakeEvidenceView}/>
+            </View>
+
+			<TouchableOpacity
+				onPress={this.onTakePicturePress
+					    /*this.onClockInButtonPressed*/
+				       }>	
+											
+					<View
+						style={{
+								//backgroundColor: "rgb(148, 233, 56)",
+								backgroundColor:this.state.backgroundColorBtnClockIn,
+								borderRadius: 20,
+								shadowColor: "rgba(0, 0, 0, 00.16)",
+								shadowRadius: 12,
+								shadowOpacity: 1,
+								width: 240,
+								height: 48,
+								marginTop: 11,
+								flexDirection: "row",
+								alignItems: "center"}
+							}>
+						{/* Clock In Button bar / Take Picture xxx */}
+					
+						<Text
+							style={styles.txtClockInText}>Take Picture</Text>
+					
+						<View
+							style={{
+								flex: 1,
+							}}/>
+						<Image
+							source={require("./../../assets/images/grupo-60.png")}
+							style={styles.imgClockInImage}/>
+						
+					</View>
+						
+				</TouchableOpacity>
+              <View  style={{ height:30 }}></View>
+            </ModalContent>;
 
 		const { modalVisible } = this.state; 
 		
@@ -2218,12 +2369,16 @@ clockOutLunch = () => {
 
 				<View 		style={[styles.containerWait, !this.state._waiting ? styles.containerHiddend : {}]}>
                       <ActivityIndicator size="large" color="#ffff"  />
+					  
                 </View>
 				<View 		style={[styles.containerWait, !this.state._waitingclock ? styles.containerHiddend : {}]}>
                       <ActivityIndicator animating="false"  size="large" color="#ffff"  />
+					  
+					  {popupEvidence} 
                 </View>	
 				<View 		style={[styles.containerWait, !this.state._waitingreport ? styles.containerHiddend : {}]}>
-                      <ActivityIndicator animating="false"  size="large" color="#ffff"  />
+
+					  <ActivityIndicator animating="false"  size="large" color="#ffff"  />
                 </View>				
 				
 				<KeyboardAwareScrollView  behavior={ Platform.OS === 'ios'? 'padding': null}
@@ -2237,8 +2392,8 @@ clockOutLunch = () => {
 							style={styles.containerStudents}> 
 							<ChildElementStuden  result={this.state.data}  atten={this.state._arrayAttandance}   nav ={this}/>  
 							</View>
-			<AppStates></AppStates>
 			
+		
 			
 							<View
 								style={styles.viewTitleMakeupStudentsView}>
@@ -2468,7 +2623,7 @@ clockOutLunch = () => {
 
 										  { this.state.clock == 1 && 
 											<View style={styles.viewBandView}> 
-
+												
 												<TouchableOpacity
 														onPress={this.onArrowBackButtonPressed}>	
 													<Image
@@ -2481,6 +2636,7 @@ clockOutLunch = () => {
 												   }}/>
 												  <View
 														style={styles.viewClockInTimeView}>
+														
 														<Text
 															style={styles.txtClockInTimeText}>Clocked in</Text>
 														<Text
@@ -2532,7 +2688,8 @@ clockOutLunch = () => {
 											       onPress={this.onClockOutButtonPressed}>	
 												  <View
 														style={styles.viewClockOutView}>
-														{/* Principal Button  XXX */}
+														{/* Principal Button  xxx */}
+														{/* Clock Out Button  xxx */}
 														<Text
 															style={styles.txtClockOutText}>Clock Out </Text> 
 														<View
@@ -2563,8 +2720,11 @@ clockOutLunch = () => {
 															style={{
 																flex: 11,
 															}}/>	
+												{/* Clock In Button bar  replegado xxx   global.required_clockin_pictures &&  */}				
+												{        !this.state._waitingclock  &&
 													<TouchableOpacity
-													onPress={this.onClockInButtonPressed}>								
+													onPress={this.onClockInButtonPressed}>	
+													 							
 														<View
 															style={{
 																	//backgroundColor: "rgb(148, 233, 56)",
@@ -2579,6 +2739,8 @@ clockOutLunch = () => {
 																	flexDirection: "row",
 																	alignItems: "center"}
 																}>
+															{/* Clock In Button bar xxx */}
+														
 															<Text
 																style={styles.txtClockInText}>Clock In</Text>
 														
@@ -2589,8 +2751,49 @@ clockOutLunch = () => {
 															<Image
 																source={require("./../../assets/images/grupo-60.png")}
 																style={styles.imgClockInImage}/>
+															
 														</View>
+															
 													</TouchableOpacity>
+													}
+                                 {/* Clock In Button bar  replegado required_clockin_pictures = true xxx     */}	
+                                        {     this.state._waitingclock  &&  !  global.required_clockin_pictures &&
+													<TouchableOpacity
+													onPress={this.onClockInButtonPressed}>	
+													 							
+														<View
+															style={{
+																	//backgroundColor: "rgb(148, 233, 56)",
+																	backgroundColor:this.state.backgroundColorBtnClockIn,
+																	borderRadius: 20,
+																	shadowColor: "rgba(0, 0, 0, 00.16)",
+																	shadowRadius: 12,
+																	shadowOpacity: 1,
+																	width: 188,
+																	height: 48,
+																	marginTop: 11,
+																	flexDirection: "row",
+																	alignItems: "center"}
+																}>
+															{/* Clock In Button bar xxx */}
+														
+															<Text
+																style={styles.txtClockInText}>Clock In</Text>
+														
+															<View
+																style={{
+																	flex: 1,
+																}}/>
+															<Image
+																source={require("./../../assets/images/grupo-60.png")}
+																style={styles.imgClockInImage}/>
+															
+														</View>
+															
+													</TouchableOpacity>
+													}
+
+
 													<View
 											           style={paddingLeftExtra}/>
 											</View> 
@@ -2697,6 +2900,7 @@ clockOutLunch = () => {
 				<ModalContent style={styles.viewModalContenMaps}  >
 					<View 
 						style={styles.ClockInLocationText}>
+						
 						<Text modalPopUpClockInLocationText>Location</Text>
 						<View style={styles.viewPopUpLineView}/>
 					</View>
@@ -2828,6 +3032,7 @@ clockOutLunch = () => {
 										const { navigate } = this.props.navigation
 										this.setState({ visible_mod_notLocation: false });
 										this._setIni();
+										global.screen = "ClockOut"
 										navigate("ClockOut" ,{course: this.state._course,context:this,_onLoadGetUsers :this.props.navigation.state.params._onLoadGetUsers} )
 										this.setState({showBtnBack : true})
 										// 333
@@ -4534,6 +4739,17 @@ const styles = StyleSheet.create({
 		zIndex: 1, 
 		
 	},
+	viewModalContenTekeEvidence: {
+		backgroundColor: "#FFFFFF",
+		alignItems: "center",
+		width: 420,
+		zIndex: 1, 
+		height: 250,
+		top: 350,
+		paddingTop: 30,
+		borderRadius:8,
+		
+	},
 	viewModalContenMaps: {
 		backgroundColor: "transparent",
 		alignItems: "center",
@@ -4604,6 +4820,14 @@ const styles = StyleSheet.create({
 		width: 660,
 		position: "absolute",	
 	},
+	viewPopUpLineTakeEvidenceView: {
+		backgroundColor: "rgb(184, 184, 184)",
+		flex: 1,
+		height: 1,
+		marginTop: 10,
+		width: 400,
+		position: "absolute",	
+	},	
 
 	viewPopUpLinePracticalExamView: {
 		backgroundColor: "rgb(184, 184, 184)",
@@ -4924,6 +5148,16 @@ const styles = StyleSheet.create({
 	},
 
 	txtClockInText: {
+		color: "rgb(39, 39, 39)",
+		fontFamily: "Montserrat-Bold",
+		fontSize: 24,
+		fontStyle: "normal",
+		fontWeight: "bold",
+		textAlign: "left",
+		backgroundColor: "transparent",
+		marginLeft: 21,
+	},
+	txtClockInPictureText: {
 		color: "rgb(39, 39, 39)",
 		fontFamily: "Montserrat-Bold",
 		fontSize: 24,
@@ -6386,4 +6620,49 @@ const styles = StyleSheet.create({
 		height: 1,
 		marginTop: 7,
 	},
+	viewModalConten: {
+		backgroundColor: "transparent",
+		alignItems: "center",
+		width: 320,
+		zIndex: 1, 
+        height: 330,
+		
+	},
+	txtTitleText: {
+		backgroundColor: "transparent",
+		color: "black",
+		fontFamily: "Montserrat-Regular",
+		fontSize: 18,
+		fontStyle: "normal",
+		textAlign: "center",
+		marginBottom: 23,
+	},  
+	yesButton: {
+		backgroundColor: "#8ED93D",
+		borderRadius: 25,
+		shadowColor: "rgba(255, 45, 102, 0.72)",
+		shadowRadius: 3,
+		shadowOpacity: .5,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		alignSelf:"center",
+		padding: 0,
+		height: 40,
+		width :130,
+	},
+	noButton: {
+		backgroundColor: "#8B1936",
+		borderRadius: 25,
+		shadowColor: "rgba(255, 45, 102, 0.72)",
+		shadowRadius: 3,
+		shadowOpacity: .5,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		alignSelf:"center",
+		padding: 0,
+		height: 40,
+		width :130,
+	},    
 })

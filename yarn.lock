@@ -12377,11 +12377,6 @@ unimodules-app-loader@~3.1.0:
   resolved "https://registry.yarnpkg.com/unimodules-app-loader/-/unimodules-app-loader-3.1.0.tgz#1779d9505275e2da2e25812e142198665a14cb2d"
   integrity sha512-ykDpkZY3ZUckNQN83YP1eY0uxLHK6cLP4WMa4RWsjx5JX38dFvcXpoE/+X2RZSbIgRcCR1fjyd7H1NHjDuXhuQ==
 
-unimodules-permissions-interface@~5.4.0:
-  version "5.4.0"
-  resolved "https://registry.yarnpkg.com/unimodules-permissions-interface/-/unimodules-permissions-interface-5.4.0.tgz#cdadfdcca8b50660b9d4027c6487323346bedb0e"
-  integrity sha512-mb+uiWvf2M/og7bA28CYOH6uKsAg/7oRBodZNsXVRH/h5LjQlBd5lTECH/L3Hkm3Ta7NSQUnENtXUCO4jfnVkg==
-
 union-value@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/union-value/-/union-value-1.0.1.tgz#0b6fe7b835aecda61c6ea4d4f02c14221e109847"

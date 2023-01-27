@@ -169,13 +169,13 @@ export default class Specifications extends React.Component {
 	}
 	
 	onBtnBackPressed = () => {
-
+		global.screen = "Classroom"
 		this.props.navigation.goBack()
 	}
 	onLoginfailure = () => {
 	
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Login"
 		navigate("Login")
 	}
 

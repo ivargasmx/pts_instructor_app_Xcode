@@ -42,6 +42,9 @@ import { createAppContainer, createStackNavigator } from "react-navigation"
 import { showMessage, hideMessage } from "react-native-flash-message";
 
 import { Alert } from "react-native"
+import { View,ScrollView ,Text} from "react-native-web"
+
+import connectionHelper from "./App/Helper/Connection"; 
 
 
 const PushRouteOne = createStackNavigator({
@@ -159,11 +162,35 @@ export default class App extends React.Component {
 			fontsReady: false,		}
 	}
 
-	componentDidMount() {
+	 timeout(delay) {
+		return new Promise( res => setTimeout(res, delay) );
+	}
+
+	async componentDidMount() {
         global.logs = global.logs + "\n" + 'App Release :' + " " + Constants.manifest.version  + " ( " + Constants.manifest.ios.buildNumber +" ) \n"
 		
-		this.initProjectFonts()
-		this.initConnection()
+		 
+		await this.initConnection()
+		await this.initProjectFonts()
+		
+		if (global.debug_msg )
+		{
+			Toast.show("Test (App) : " +  global.logs + " \n" + JSON.stringify(global.net_state),{
+				position: 20,					containerStyle:{
+					backgroundColor: 'orange'
+				},				
+				duration	: 5000	,					
+				textStyle:{
+					color:'#fff',					   
+				},					
+				imgSource: null,					
+				imgStyle: {},					
+				mask: true,					
+				maskStyle:{}
+			  })
+
+			  
+		}
 	}
 
 	async initProjectFonts() {
@@ -179,24 +206,32 @@ export default class App extends React.Component {
 			"Montserrat-Bold": require("./assets/fonts/37466.otf"),			
 			"Montserrat-Regular": require("./assets/fonts/16353.otf"),		
 		})
+		console.log()
 		this.setState({
 			fontsReady: true,		})
 	}
 
 	async initConnection () {
 		await NetInfo.fetch().then(state => {
-			
+			// "type": none,unknown,wifi,cellular,ethernet,other
+			// isConnected : true, false, null
+			// isInternetReachable : true, false, null
 			console.log('Connection type::', state.type);
 			console.log('Is connected?', state.isConnected);
 			global.logs = global.logs + "\n" +"Internet Connection: " + 'Is connected?:' +state.isConnected  + '  Connection type:'+ state.type +"\n";
 			
+			global.net_state = state;
+
 			if(state.isConnected) global.connection = 1; else  global.connection = 0;  
+			
+			connectionHelper.isConnectedToAPI()
+
 			if(global.connection  === 0 || global.connectionTest === 0 ) {
-				Toast.show("No Internet connection. Please make sure Wi-Fi is off.",{
+				Toast.show("No Internet connection. Please make sure Cellular Data is on.",{
 					position: 20,					containerStyle:{
 						backgroundColor: 'orange'
 					},				
-					duration	: 1000	,					
+					duration	: 3000	,					
 					textStyle:{
 						color:'#fff',					   
 					},					
@@ -216,12 +251,14 @@ export default class App extends React.Component {
 	
 				  });
 			}else{
+				console.log("state in  App: \n",state);
                 console.log("............."+state.type+"......" )
+				/*
 				if(state.type == "wifi"){
 					Toast.show("\nYou are connected to a Wi-Fi network. Please make sure Wi-Fi is off.",{
 						position: 140,						
 						containerStyle:{
-							backgroundColor: '#FF6600'
+							backgroundColor: '#FF6600' 
 						},						
 						duration	: 5000	,						
 						textStyle:{
@@ -232,7 +269,8 @@ export default class App extends React.Component {
 						mask: true,						
 						maskStyle:{}
 					  })
-				}   
+				}  
+				*/ 
 
 			}
 	
@@ -245,7 +283,21 @@ export default class App extends React.Component {
 
 	render() {
 	
-		if (!this.state.fontsReady) { return (<AppLoading />); }
-		return <AppContainer/>
+		if (!this.state.fontsReady) {
+		 return (<AppLoading>
+			{ global.debug_msg && <View>	   
+				<ScrollView >
+					
+					<View><Text>{global.logs}</Text></View>
+				</ScrollView>
+			</View>}
+		</AppLoading>); } 
+		return <AppContainer>
+			    { global.debug_msg && <View>	   
+				  <ScrollView >	
+					<View><Text>{global.logs}</Text></View>
+				</ScrollView>
+		  </View>}
+		</AppContainer>
 	}
 }

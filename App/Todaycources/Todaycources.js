@@ -31,7 +31,7 @@ export default class Todaycources extends React.Component {
 	onLoginfailure = () => {
 	
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Login"
 		navigate("Login")
 	}
 	componentDidMount() {
@@ -132,7 +132,7 @@ export default class Todaycources extends React.Component {
 	onComGooglecodeItermPressed = () => {
 	
 		const { navigate } = this.props.navigation
-		
+		global.screen = "Login"
 		navigate("Login")
 	}
 

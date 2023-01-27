@@ -65,6 +65,8 @@ export default class TakePicture extends React.Component {
     if (this.state.mode == "take" && this.state.cameraPermission) {
        return( <Camera 
         parentWindow = {this}
+        imageButtonSave ={this.props.navigation.state.params.imageSaveButton}
+        
        />)
        
    } // take

@@ -34,7 +34,7 @@ import * as FileSystem from 'expo-file-system';
 import  Modal,{SlideAnimation, ModalContent,ModalButton } from 'react-native-modals';
 import ErrorHandler    from "../Helper/ErrorHandler" 
 import authHelper   from "../Helper/Sessions";
-
+import Toast from 'react-native-tiny-toast';
 
 //var RNFS = require('react-native-fs');
 
@@ -61,6 +61,7 @@ export default class Inventory extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state={
+			current_screen : "Inventory",
             fromValue:0,
             toValue:0,
             value:0,
@@ -138,6 +139,7 @@ export default class Inventory extends React.Component {
 	onLoginfailure = () => {
 		
 		const { navigate } = this.props.navigation;
+		global.screen = "Login"
 		navigate("Login");
 	}
 	getLocationAsync = async () => {
@@ -160,6 +162,7 @@ export default class Inventory extends React.Component {
 
 	 async componentDidMount() {
 	    global.logs = "";	 
+		console.log("On Inventory Module")
        // ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
        // ScreenOrientation.lockAsync(ScreenOrientation.Orientation.PORTRAIT);
        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
@@ -253,7 +256,7 @@ export default class Inventory extends React.Component {
 		this.setState({imageB64Arr:pass})
 		console.log( pass.length, " en  processImage:" );
 
-		console.log( "global.required_checkout_pictures:",global.required_checkout_pictures );
+		console.log( "global.required_clockout_pictures:",global.required_clockout_pictures );
 
 	};
 	
@@ -446,6 +449,7 @@ console.log("responseJSON::",responseJSON)
   }).then((response) =>  response.text()) 
 		.then((responseData) =>
 		 {
+			console.log(_url,responseData)
 			global.logs = ErrorHandler.setMessageResponse( "",UpdateInventoryMesage,responseData,"response","",_url,global.id,global.name ,global.email);
 		   this.setState({_waiting : false})
 		   this.setState({_checkedInventory:true})
@@ -454,7 +458,7 @@ console.log("responseJSON::",responseJSON)
 			   let responseJSON = JSON.parse (responseTXT); 
 
 			   if(responseJSON['success'] !== undefined && responseJSON['success'] !== false )  {
-					  connDBHelper.setClockOutOk(this.state.course_date_id,global.user_id,shift_time_id);   
+					  //connDBHelper.setClockOutOk(this.state.course_date_id,global.user_id,shift_time_id);   
 					
 
 				Alert.alert(
@@ -553,15 +557,178 @@ console.log("responseJSON::",responseJSON)
 	return inventoryJSONMessage;
  }
 
+ 
+ onClockOutButtonPressedCleen = () => {   // Real ClockOut (Clock Out) R.Cleen
+	
+	console.log(" 0 " )
+	this.showDebug("0","green")
+	
+	let	objectClockOut = {shift_time_id:global.shift_time_id, device_setup:0,
+		latitude:this.state.location.latitude,
+		longitude:this.state.location.longitude,
+		checklist:this.getArrayChecks()
+		,city_id:global.city_id  } ;
 
- onClockOutButtonPressed = () => {
+	var _url = global.host + '/api/auth/clockout';
+	var _body = JSON.stringify(
+			objectClockOut
+		);
 
-		let shift_id = this.state._course.id;
-		let	objectClockOut = {shift_time_id:global.shift_time_id, device_setup:0,latitude:(this.state.location ? this.state.location.latitude :0)
-			,longitude:(this.state.location ? this.state.location.longitude :0),checklist:this.getArrayChecks(),city_id:global.city_id  } ;
+
+		objectClockOut.trash_picture  =  this.state.imageB64Arr.length !== 0 ? this.state.imageB64Arr[1] : undefined
+		objectClockOut.floor_picture =this.state.imageB64Arr.length !== 0 ? this.state.imageB64Arr[2] : undefined
+		objectClockOut.classroom_picture = this.state.imageB64Arr.length !== 0 ? this.state.imageB64Arr[3] : undefined
+		objectClockOut.supply_center = this.state.imageB64Arr.length !== 0 ? this.state.imageB64Arr[4] : undefined
+
+		this.setState({_waiting : true})
+
+		fetch(_url, {
+			method: 'POST',
+			headers: {
+			   'Accept': 'application/json',
+			   'Content-Type': 'application/json', 
+			   "cache-control": "no-cache",
+			   'Authorization' : global.token_type +  " " + global.access_token
+			},
+			body: _body
+		   
+		  }).then((response) =>  response.text()) 
+				.then((responseData) =>
+				 {
+				console.log("_url::",_url)
+				console.log("responseData::",responseData)
+				console.log(" 13 " )
+				this.showDebug("13","orange")
+					//global.logs = global.logs + " Clock - OUT (Response): " + JSON.stringify(responseData) + "\n";
+					global.logs = ErrorHandler.setMessageResponse( "",_body,responseData,"response","",_url,global.id,global.name ,global.email);
+					this.setState({_waiting : false})
+				   try {
+					   var responseTXT = responseData;
+					   let responseJSON = JSON.parse (responseTXT); 
+
+					   console.log(" 14 " )
+					   this.showDebug("14","yellow")
+
+					   if(responseJSON['success'] !== undefined && responseJSON['success'] !== false )  {
+						      // connDBHelper.setClockOutOk(this.state.course_date_id,global.user_id,shift_time_id);  
+							  //this.deleteImageFilesBackStock(this.state.backStockPictureObjList[0].data)
+							  
+							  this.deleteImageFiles(this.state.backStockPictureArr)
+							  console.log(" 15 " )
+							  this.showDebug("15","red")
+
+						Alert.alert(
+							'Today you worked',
+							// "From " + responseJSON['clock_in_time'].substring(15,19) + " to " +  responseJSON['clock_out_time'].substring(11,19),
+							"From " + responseJSON['msg'].substring(15,38) ,
+							[
+							{text: 'OK', onPress: () => {
+								   //connDBHelper.saveClock( shift_id, global.shift_time_id, this.state._course.course_date_id,global.user_id,1,this.state._course.instructor_id,3,JSON.stringify(objectClockOut));
+								  
+								   global.clock = 0;
+					               this.props.navigation.state.params.context.setColorClockIn();
+								   //connDBHelper.setClockInOff(this.state._course.course_date_id,global.user_id,global.shift_time_id)  ;
+								   //this.onOkPressed();
+								   
+								   authHelper.logOut(global.host,global.access_token); 
+								   this.props.navigation.state.params._onLoadGetUsers(global.location_now.latitude,global.location_now.longitude); 
+		                           const { navigate } = this.props.navigation
+								   global.screen = "Login"
+		                           navigate("Login")
+							     }
+							},
+							],
+							{cancelable: false},
+						   );
+					    
+                                  
+					 	} else{
+							console.log("ERROR");
+							if (responseJSON['message'] == "Unauthenticated."){
+							Alert.alert(
+								'Attention !',
+								'Your session expired. Please login again.',
+								[
+								{text: 'OK', onPress: () => {console.log('OK Error Pressed');return;}},
+								],
+								{cancelable: false},
+							);
+							
+							   this.onLoginfailure();  
+							}
+							if (responseJSON['msg'] == "Error Clock Out"){
+								Alert.alert(
+									"Clock Out Error" +'!',
+									responseJSON['error'],
+									[
+									{text: 'OK', onPress: () => {
+										console.log('OK Pressed Message Error');
+										
+									}
+									
+								    },
+									],
+									{cancelable: false},
+								);
+								
+								    
+								}							
+					 } 
+
+				   } catch (e) {
+					   console.log(e);
+					   this.setState({
+						   authenticated :0
+					   });
+					   if (e !== "ERROR")
+					        Alert.alert("Error:", "Problems connecting to the Server. Please try again later.");
+
+				   }
+
+				}).catch((error) => {
+				  console.log(error);	 
+				  console.error(error);
+
+				  this.setState({
+					 authenticated :0
+				   });
+				});
+	
+
+ }
 
 
-       this.props.navigation.state.params.context.setColorClockIn();
+
+ onClockOutButtonPressed = () => {   // Real ClockOut (Clock Out)
+
+	console.log(" 000 " )
+	this.showDebug("0","green")
+
+		//let shift_id = this.state._course.id;
+		let	objectClockOut = {shift_time_id:global.shift_time_id, device_setup:0,
+			//latitude:(this.state.location ? this.state.location.latitude :0),
+			latitude:this.state.location.latitude,
+			//longitude:(this.state.location ? this.state.location.longitude :0),
+			longitude:this.state.location.longitude,
+			checklist:this.getArrayChecks()
+			,city_id:global.city_id  } ;
+
+console.log("objectClockOut  :: ",objectClockOut)
+      // this.props.navigation.state.params.context.setColorClockIn();
+
+       if(global.clock == 0) {
+		Alert.alert(
+			'Attention !',
+			'You need Clock in before.',
+			[
+			{text: 'OK', onPress: () => console.log('OK Pressed')},
+			],
+			{cancelable: false},
+		);
+		return;
+	}
+	console.log(" 111 " )
+	this.showDebug("1","red")
        if(global.clock == 0) {
 			Alert.alert(
 				'Attention !',
@@ -573,22 +740,68 @@ console.log("responseJSON::",responseJSON)
 			);
 			return;
 		}
-
-
+		console.log(" 222 " )
+		this.showDebug("2","blue")
+		if(
+			(! this.state.location.latitude || ! this.state.location.longitude) ||
+		    ( this.state.location.latitude == 0   ||  this.state.location.longitude == 0)
+		){
+			Alert.alert(
+				'Attention !',
+				'Check permission to access location and try again.',
+				[
+				{text: 'OK', onPress: () => console.log('OK Pressed')},
+				],
+				{cancelable: false},
+			);
+			return;
+		 }
+		 console.log(" 333 " )
+		 this.showDebug("3","green")
+		 //////////
+		 if(!this.state._roll) {
+			Alert.alert(
+				'Attention !',
+				'Take Roll is required.',
+				[
+				{text: 'OK', onPress: () => console.log('OK Pressed')},
+				],
+				{cancelable: false},
+			);
+			return;
+		}
+console.log(" 444 " )
+this.showDebug("4","pink")
+		if(this.state.shift_hours  >=6  && ! this.state._breaks) {
+			Alert.alert(
+				'Attention !',
+				'Take scheduled breaks  is required.',
+				[
+				{text: 'OK', onPress: () => console.log('OK Pressed')},
+				],
+				{cancelable: false},
+			);
+			return;
+		}
+		///////
+console.log(" 555 " )
+this.showDebug("5","yellow")
 		if(global.connection !== 1) {
-
+			
 			Alert.alert(
 				'Attention !',
 				'Your Clock Out, has been saved locally due to not having internet access.',
 				[
 				{text: 'OK', onPress: () => {
-					   connDBHelper.saveClock( shift_id, global.shift_time_id, this.state._course.course_date_id,global.user_id,0,this.state._course.instructor_id,3,JSON.stringify(objectClockOut));
-					   connDBHelper.setClockInOff(this.state._course.course_date_id,global.user_id,global.shift_time_id)  ;
+					   
+					   //connDBHelper.saveClock( shift_id, global.shift_time_id, this.state._course.course_date_id,global.user_id,0,this.state._course.instructor_id,3,JSON.stringify(objectClockOut));
+					   //connDBHelper.setClockInOff(this.state._course.course_date_id,global.user_id,global.shift_time_id)  ;
 					   global.clock =0;
 					  
 					   //global.shift_time_id = 0;
 					   this.props.navigation.state.params.context.setColorClockIn();
 					   this.onOkPressed();
+					   return;
 					 }
 				},
 				],
@@ -598,38 +811,48 @@ console.log("responseJSON::",responseJSON)
 			 
 			return;
 		}
+console.log(" 666 " )
+this.showDebug("6","gray")
         let picturesOk = true;
 		let errorMessage = "";
 
 
+
+
 		if(! this.state._breaks ) {
-			errorMessage = "Take schedule breaks  is required";
+			errorMessage = "Take scheduled breaks  is required";
 			
 			picturesOk = false;
 		}		
-
-		if(  global.required_checkout_pictures &&  ! this.state.imageB64Arr[1]  ) {
+console.log(" 777 " )
+this.showDebug("7","orange")
+		if(  global.required_clockout_pictures &&  ! this.state.imageB64Arr[1]  ) {
 			errorMessage = "Take out the trash (empty trash can photo) is required";
 			
 			picturesOk = false;
 		}
 
-		if( global.required_checkout_pictures && ( ! this.state.imageB64Arr[2] &&  picturesOk) ) {
+		if( global.required_clockout_pictures && ( ! this.state.imageB64Arr[2] &&  picturesOk) ) {
 			errorMessage = "Vacuum / mop (floor photo) is required";
 			this.setState({_wipe:false})
 			picturesOk = false;
 		}
-
-		if( global.required_checkout_pictures && ( ! this.state.imageB64Arr[3] &&  picturesOk )) {
+		console.log(" 888 " )
+		this.showDebug("8","puple")
+		if( global.required_clockout_pictures && ( ! this.state.imageB64Arr[3] &&  picturesOk )) {
 			errorMessage = "Clean up (classroom full shot) is required";
 			picturesOk = false;
-		}		
-		if(global.required_checkout_pictures &&  (! this.state.imageB64Arr[4] &&  picturesOk) ) {
+		}
+		
+		console.log(" 999 " )	
+		this.showDebug("9","white")			
+		if(global.required_clockout_pictures &&  (! this.state.imageB64Arr[4] &&  picturesOk) ) {
 			errorMessage = "Please take a picture of the restocked Student Supply Center";
 			picturesOk = false;
 		}	
-
-        if( global.required_checkout_pictures &&  ! picturesOk) {
+		console.log(" 10 " )
+		this.showDebug("10","blue")
+        if( global.required_clockout_pictures &&  ! picturesOk) {
 			Alert.alert(
 				'Clock Out Error!',
 				errorMessage,
@@ -645,19 +868,39 @@ console.log("responseJSON::",responseJSON)
 			);
 			return;
 		}
+		console.log(" 1111" )
+		this.showDebug("11","red")	
+console.log("this.state.imageB64Arr Inv:" ,this.state.imageB64Arr.length);
 
-		objectClockOut.trash_picture  = this.state.imageB64Arr[1]
-		objectClockOut.floor_picture =this.state.imageB64Arr[2]
-		objectClockOut.classroom_picture = this.state.imageB64Arr[3]
-		objectClockOut.supply_center = this.state.imageB64Arr[4]
+		objectClockOut.trash_picture  =  this.state.imageB64Arr.length !== 0 ? this.state.imageB64Arr[1] : undefined
+		objectClockOut.floor_picture =this.state.imageB64Arr.length !== 0 ? this.state.imageB64Arr[2] : undefined
+		objectClockOut.classroom_picture = this.state.imageB64Arr.length !== 0 ? this.state.imageB64Arr[3] : undefined
+		objectClockOut.supply_center = this.state.imageB64Arr.length !== 0 ? this.state.imageB64Arr[4] : undefined
+/*
+		objectClockOut.trash_picture  =   this.state.imageB64Arr[1] 
+		objectClockOut.floor_picture =  this.state.imageB64Arr[2] 
+		objectClockOut.classroom_picture = this.state.imageB64Arr[3] 
+		objectClockOut.supply_center =  this.state.imageB64Arr[4] 
+*/
 
+		console.log("objectClockOut Inv:" ,objectClockOut);
+		//xxx
+		
+		console.log(" 12 " )
+		this.showDebug("12","pink")
 		//console.log(this.state.backStockPictureB64Arr) ; 
  
-        this.setState({_waiting : true})
+        
 		var _url = global.host + '/api/auth/clockout';
 		var _body = JSON.stringify(
 				objectClockOut
 			);
+
+	
+
+this.setState({_waiting : true})
+
+
 		fetch(_url, {
 			method: 'POST',
 			headers: {
@@ -671,7 +914,10 @@ console.log("responseJSON::",responseJSON)
 		  }).then((response) =>  response.text()) 
 				.then((responseData) =>
 				 {
-				console.log(responseData)
+				console.log("_url::",_url)
+				console.log("responseData::",responseData)
+				console.log(" 13 " )
+				this.showDebug("13","orange")
 					//global.logs = global.logs + " Clock - OUT (Response): " + JSON.stringify(responseData) + "\n";
 					global.logs = ErrorHandler.setMessageResponse( "",_body,responseData,"response","",_url,global.id,global.name ,global.email);
 					this.setState({_waiting : false})
@@ -679,13 +925,16 @@ console.log("responseJSON::",responseJSON)
 					   var responseTXT = responseData;
 					   let responseJSON = JSON.parse (responseTXT); 
 
-
+					   console.log(" 14 " )
+					   this.showDebug("14","yellow")
 
 					   if(responseJSON['success'] !== undefined && responseJSON['success'] !== false )  {
-						      connDBHelper.setClockOutOk(this.state.course_date_id,global.user_id,shift_time_id);  
+						      // connDBHelper.setClockOutOk(this.state.course_date_id,global.user_id,shift_time_id);  
 							  //this.deleteImageFilesBackStock(this.state.backStockPictureObjList[0].data)
-							  this.deleteImageFiles(this.state.backStockPictureArr)
 							  
+							  this.deleteImageFiles(this.state.backStockPictureArr)
+							  console.log(" 15 " )
+							  this.showDebug("15","red")
 
 						Alert.alert(
 							'Today you worked',
@@ -697,12 +946,13 @@ console.log("responseJSON::",responseJSON)
 								  
 								   global.clock = 0;
 					               this.props.navigation.state.params.context.setColorClockIn();
-								   connDBHelper.setClockInOff(this.state._course.course_date_id,global.user_id,global.shift_time_id)  ;
+								   //connDBHelper.setClockInOff(this.state._course.course_date_id,global.user_id,global.shift_time_id)  ;
 								   //this.onOkPressed();
 								   
 								   authHelper.logOut(global.host,global.access_token); 
 								   this.props.navigation.state.params._onLoadGetUsers(global.location_now.latitude,global.location_now.longitude); 
 		                           const { navigate } = this.props.navigation
+								   global.screen = "Login"
 		                           navigate("Login")
 							     }
 							},
@@ -765,6 +1015,25 @@ console.log("responseJSON::",responseJSON)
 	
 	}
 
+showDebug(msg,color){
+	// if("2023-01-26" !== Moment(Date.now()).format('Y-MM-DD') ) return;
+	Toast.show( "Time:" + msg,{
+		position: Toast.position.center,
+		containerStyle:{
+			backgroundColor: color
+		},
+		duration	: 2000	,
+		delay : 100,
+		textStyle:{
+			color:'#fff',
+		   },
+		imgSource: null,
+		imgStyle: {},
+		mask: true, 
+		maskStyle:{}
+	  })
+}
+
 sendInventoryItem = (inventory_item_id,amount,picture,comment) => {
  
 
@@ -776,7 +1045,10 @@ sendInventoryItem = (inventory_item_id,amount,picture,comment) => {
 		var _body =  JSON.stringify(
 				objectInventoryItem
 			);
-console.log("_body::",_body)			
+console.log("_body:::",_body)	
+
+
+
 		fetch(_url, {
 			method: 'PUT',
 			headers: {
@@ -790,6 +1062,7 @@ console.log("_body::",_body)
 		  }).then((response) =>  response.text()) 
 				.then((responseData) =>
 				 {
+					console.log(_url + " --- ",responseData)
 				global.logs = ErrorHandler.setMessageResponse( "",_body,responseData,"response","",_url,global.id,global.name ,global.email);
 				console.log("responseData::",responseData)
 					this.setState({_waiting : false})
@@ -885,7 +1158,7 @@ console.log("_body::",_body)
 				 {
 				    global.logs = ErrorHandler.setMessageResponse( "",_body,responseData,"response","",_url,global.id,global.name ,global.email);
 
-					console.log(responseData)
+					console.log('/api/auth/inventory/'+global.city_id+'/notification',responseData)
 					this.setState({_waiting : false})
 				   try {
 					   var responseTXT = responseData;
@@ -960,6 +1233,7 @@ console.log("_body::",_body)
 		
 		this.props.navigation.state.params.context.onReturnFromApplayClockOut()
 		this.props.navigation.state.params._onLoadGetUsers(global.location_now.latitude,global.location_now.longitude);  
+		global.screen = "Classroom"
 		this.props.navigation.goBack();
 	}
 
@@ -1005,7 +1279,7 @@ console.log("_body::",_body)
 	}
 
 	onNextInventoryButtonPressed = async () => {
-
+		
 			    // Send current  Item
 				let alreadyValidte = (this.state.inventaryItemsReport[this.state.currentItemInventary] == undefined ? null : this.state.inventaryItemsReport[this.state.currentItemInventary].amount)
 			    
@@ -1039,7 +1313,7 @@ console.log("_body::",_body)
 				await AsyncAlert();
 				}	
 
-			
+				
 				await this.processItemImage (this.state.currentItemPicture)
 				
 
@@ -1124,6 +1398,7 @@ console.log("_body::",_body)
 				if(this.state.currentItemInventary == this.state.itemsInventaryList.count -2 )  this.setState({nextText:"Finish"})
 				   this.setState({currentItemInventary:siguente})
 				let nextItem = this.state.itemsInventaryList.items[siguente]
+	console.log(">>>> nextItem >", nextItem)
 				this.setState({item:nextItem})
                 
 				if(this.state.itemPictureArray[siguente] == undefined || this.state.itemPictureArray[siguente] == null)
@@ -1202,12 +1477,23 @@ console.log("_body::",_body)
 	}
 
 	  deleteImageFiles   (picturesArray)  {
+
+
 		if(picturesArray == null || picturesArray.length == 0)   return
+		
 		picturesArray.map((file,i) => {
-			const dirInfo =  FileSystem.getInfoAsync(file);
-			if (dirInfo.exists) {
-				 FileSystem.deleteAsync(file);
+            console.log("deleted File ::" ,file)
+			if(file !== null && file !== ""  ){	
+				console.log("to delete::",file)		
+			    const dirInfo =  FileSystem.getInfoAsync(file);
+				if (dirInfo.exists) {
+					console.log("real deleted::",file)	
+					FileSystem.deleteAsync(file);
+				}
+			}else{
+				console.log("no deleted::",file)	
 			}
+
 		})
 	}
 	deleteImageFilesBackStock   (picturesArray)  {
@@ -1229,6 +1515,7 @@ console.log("_body::",_body)
 		this.deleteImageFiles(this.state.backStockPictureArr)
 		
 		this.props.navigation.state.params.context.onReturnFromApplayClockOut()
+		global.screen = "Classroom"
 		this.props.navigation.goBack()
 	}
 
@@ -1261,6 +1548,7 @@ console.log("_body::",_body)
 		this.deleteImageFiles(this.state.backStockPictureArr)
 		
 		this.props.navigation.state.params.context.onReturnFromClockOut()
+		global.screen = "Classroom"
 		this.props.navigation.goBack()
 	}
 
@@ -1270,7 +1558,7 @@ console.log("_body::",_body)
 		console.log(" this.state._endCheckedInventory", this.state._endCheckedInventory);
 		console.log("this.state._restockSecction ",this.state._restockSecction );
 		console.log(" this.state._checkedInventory",this.state._checkedInventory );
-		console.log("global.required_checkout_pictures ", global.required_checkout_pictures);
+		console.log("global.required_clockout_pictures ", global.required_clockout_pictures);
 
 		
 	}
@@ -1283,12 +1571,12 @@ console.log("_body::",_body)
 		let arr = [];
 
 		if(  this.state._roll)  arr.push( "roll");
-		if(! global.required_checkout_pictures || this.state._rdocuments)  arr.push( "documents");
-		if(! global.required_checkout_pictures || this.state._trash)  arr.push( "trash");
-		if(! global.required_checkout_pictures || this.state._wipe)  arr.push( "wipe");
-		if(! global.required_checkout_pictures || this.state._restock)  arr.push( "restock");
-		if(! global.required_checkout_pictures || this.state._breaks)  arr.push( "breaks");
-		if(! global.required_checkout_pictures || this.state._documents)  arr.push( "documents");
+		if(! global.required_clockout_pictures || this.state._rdocuments)  arr.push( "documents");
+		if(! global.required_clockout_pictures || this.state._trash)  arr.push( "trash");
+		if(! global.required_clockout_pictures || this.state._wipe)  arr.push( "wipe");
+		if(! global.required_clockout_pictures || this.state._restock)  arr.push( "restock");
+		if(! global.required_clockout_pictures || this.state._breaks)  arr.push( "breaks");
+		if(! global.required_clockout_pictures || this.state._documents)  arr.push( "documents");
 
 		return arr;
 	}
@@ -1426,7 +1714,7 @@ console.log("_body::",_body)
       } 
 
 	  onSendPictureRestockNextPress= () => {
-		if(! global.required_checkout_pictures || ! this.state.imageB64Arr[4] ) {
+		if(! global.required_clockout_pictures || ! this.state.imageB64Arr[4] ) {
 			Alert.alert(
 				'Clock Out Error!',
 				"Please take a picture of the restocked Student Supply Center",
@@ -1461,14 +1749,15 @@ console.log("_body::",_body)
 		
 		let valueSrt;
 		let valueFrac = "0";
-		
+console.log("global.inventory_check::",global.inventory_check);
 		if(global.inventory_check == 1 && this.state.item !== null && this.state.item !== undefined ) {
-		
+			console.log("this.state.item.last_report::",this.state.item.last_report);
 				if(this.state.item.last_report == null || this.state.item.last_report == undefined ){
-					valueSrt = "";
+					valueSrt = "0";
 				}else{
 					valueSrt = this.state.item.last_report.amount;
 				}
+
 				let valueNum = parseFloat(valueSrt)
 				let valueInt =Math.trunc(valueNum)
 
@@ -1476,7 +1765,9 @@ console.log("_body::",_body)
 
 				valueSrt =   (valueInt == 0 ? "": valueInt ) + "" +  valueFracNum.toString().replace("0.25", " ¼").replace("0.5", " ½").replace("0.75", " ¾").replace("0", "") 
 			console.log("++++" , valueSrt)
-				if(valueSrt != '0') valueSrt = valueSrt + " - " + this.state.item.last_report.instructor.name
+				if(valueSrt != '0') valueSrt = valueSrt + " - " 
+				              + ( this.state.item.last_report == null || this.state.item.last_report == undefined 
+								  ? " " : this.state.item.last_report.instructor.name)
 	    }
 
 		return <View
@@ -1504,9 +1795,9 @@ console.log("_body::",_body)
 				</TouchableOpacity>
 
 
-				{ (  ( ( this.state._restockSecction == false  || !global.required_checkout_pictures ) && global.inventory_check == 0  )
+				{ (  ( ( this.state._restockSecction == false  || !global.required_clockout_pictures ) && global.inventory_check == 0  )
 				  ||  ( global.inventory_check == 1 && (this.state._checkedInventory && !this.state._endCheckedInventory) )
-                  ||  ( (!this.state._checkedInventory && this.state._endCheckedInventory && global.inventory_check == 0   && !global.required_checkout_pictures) )
+                  ||  ( (!this.state._checkedInventory && this.state._endCheckedInventory && global.inventory_check == 0   && !global.required_clockout_pictures) )
 				  ) &&
 					<View>
 					<Text
@@ -1529,7 +1820,7 @@ console.log("_body::",_body)
 							<Text
 								style={styles.txtlabeltakerollText}>Take Roll</Text>
 						</View>
-					{ global.required_checkout_pictures &&		// 	clock Out Pictures
+					{ global.required_clockout_pictures &&		// 	clock Out Pictures
 					    <View> 
 							<View
 								style={styles.viewRowBootonView
@@ -1632,7 +1923,7 @@ console.log("_body::",_body)
 								value={this.state._breaks}
 							/>
 							<Text
-								style={styles.txtlabeltakerollText}>Take schedule breaks</Text>
+								style={styles.txtlabeltakerollText}>Take scheduled breaks</Text>
 						</View>
 						}
 						
@@ -1642,7 +1933,7 @@ console.log("_body::",_body)
 							<Text
 								style={styles.txtlabelbycheckingText}>*By checking this boxes I confirm that I've taken care of the required items.</Text>
 							<TouchableOpacity
-								onPress={this.onClockOutButtonPressed}
+								onPress={this.onClockOutButtonPressedCleen}
 								style={styles.btnclockoutButton}>
 								<Image
 								source={require("./../../assets/images/grupo-61.png")}
@@ -1884,7 +2175,7 @@ console.log("_body::",_body)
 
 
 			        <View >
-					  {  ( (this.state._restockSecction == false  || !global.required_checkout_pictures ) && global.inventory_check == 1  && !this.state._endCheckedInventory ) && 
+					  {  ( (this.state._restockSecction == false  || !global.required_clockout_pictures ) && global.inventory_check == 1  && !this.state._endCheckedInventory ) && 
 				        this.state.item  &&  	
 					   <View style={styles.viewContenInventoryCheck}>	
 							<Text
@@ -2174,7 +2465,11 @@ console.log("_body::",_body)
 												flex: 11,
 								}}/>
 								<TouchableOpacity
-									onPress={this.onNextInventoryButtonPressed} 
+									onPress={()=>{
+										
+										this.onNextInventoryButtonPressed()
+										
+									} }
 									style={styles.btnInventoryNextButton}>
 
 									<Text
@@ -2189,7 +2484,7 @@ console.log("_body::",_body)
 				</View>
 	
 
-				{  ( this.state._restockSecction &&  global.required_checkout_pictures  ) &&  ( !this.state._endCheckedInventory   )   && // 	clock Out Pictures 
+				{  ( this.state._restockSecction &&  global.required_clockout_pictures  ) &&  ( !this.state._endCheckedInventory   )   && // 	clock Out Pictures 
 	
 				<View style={{
 							left: 0,

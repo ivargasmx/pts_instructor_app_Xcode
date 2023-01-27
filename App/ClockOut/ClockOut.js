@@ -77,7 +77,7 @@ export default class ClockOut extends React.Component {
 	  }
 
 	componentDidMount() {
-		
+		console.log("On Clock Out Module")
 		console.log(this.props.navigation.state.params);
 		this.getLocationAsync();
 		//OJO para local
@@ -319,8 +319,12 @@ export default class ClockOut extends React.Component {
  onClockOutButtonPressed = () => {
  
 		let shift_id = this.state._course.id;
-		let	objectClockOut = {shift_time_id:global.shift_time_id, device_setup:0,latitude:(this.state.location ? this.state.location.latitude :0)
-			,longitude:(this.state.location ? this.state.location.longitude :0),checklist:this.getArrayChecks() ,city_id:global.city_id } ;
+		let	objectClockOut = {shift_time_id:global.shift_time_id, device_setup:0,
+			//latitude:(this.state.location ? this.state.location.latitude :0)
+			latitude: this.state.location.latitude 
+			//,longitude:(this.state.location ? this.state.location.longitude :0)
+			,longitude:this.state.location.longitude 
+			,checklist:this.getArrayChecks() ,city_id:global.city_id } ;
 
 	 global.logs = "Clock - OUT (objectClockOut): " + JSON.stringify(objectClockOut) + "\n";
 
@@ -340,7 +344,8 @@ export default class ClockOut extends React.Component {
 			Alert.alert(
 				'Attention !',				'Your Clock Out, has been saved locally due to not having internet access.',				[
 				{text: 'OK', onPress: () => {
-					   connDBHelper.saveClock( shift_id, global.shift_time_id, this.state._course.course_date_id,global.user_id,0,this.state._course.instructor_id,3,JSON.stringify(objectClockOut));
+					   connDBHelper.saveClock( shift_id, global.shift_time_id, this.state._course.course_date_id,global.user_id,0,this.state._course.instructor_id,3
+						,JSON.stringify(objectClockOut));
 					   connDBHelper.setClockInOff(this.state._course.course_date_id,global.user_id,global.shift_time_id)  ;
 					   global.clock =0;
 					   console.log('OK Success Pressed');
@@ -353,6 +358,19 @@ export default class ClockOut extends React.Component {
 			 
 			return;
 		}
+
+		if(! this.state.location.latitude || ! this.state.location.longitude 
+			|| this.state.location.latitude == 0 ||  this.state.location.longitude == 0  ){
+			Alert.alert(
+				'Attention !',
+				'Check permission to access location and try again.',
+				[
+				{text: 'OK', onPress: () => console.log('OK Pressed')},
+				],
+				{cancelable: false},
+			);
+			return;
+		 }
 
 		let picturesOk = true;
 		let errorMessage = "";
@@ -497,11 +515,13 @@ export default class ClockOut extends React.Component {
 	onOkPressed(){
 		this.props.navigation.state.params.context.onReturnFromApplayClockOut()
 		this.props.navigation.state.params._onLoadGetUsers(global.location_now.latitude,global.location_now.longitude); 
+		global.screen = "Classroom"
 		this.props.navigation.goBack();
 	}
 	onBtnBackPressed = () => {
 
 		this.props.navigation.state.params.context.onReturnFromClockOut()
+		global.screen = "Classroom"
 		this.props.navigation.goBack()
 	}
 	onChangeOption (value)  {

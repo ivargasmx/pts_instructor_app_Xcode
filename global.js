@@ -12,16 +12,23 @@ global.id = 0;
 global.access_token = '';   
 global.token_type = ''; 
 global.expires_at = "";
-global.email = "" ; // "vanslyke_erin@yahoo.com";//"rebaarriola@gmail.com";//"ellaed22@icloud.com"; //"jessie_hines@outlook.com"; //"hoffmanjennifera@hotmail.com";//"JencollinsPTS@gmail.com";//"calvillog50@yahoo.com";// "MissStephanieBowers@gmail.com";//"ellaed22@icloud.com";//hristy@phlebotomyusa.com";//"kazzybradshaw@gmail.com";//"lipke.p@yahoo.com";//"by3vtec@icloud.com";//"ellaed22@icloud.com"; //"hoffmanjennifera@hotmail.com";// "josetta.celestine001@mymdc.net";//"cwilki43@gmail.com" ,//"jessie_hines@outlook.com" ,//"hoffmanjennifera@hotmail.com",//"jon.valenti@yahoo.com"//"cgonzalez1146@yahoo.com";// "christy@phlebotomyusa.com" ;  //"kmichellesidhu@outlook.com"; //"rebecca@bundy6pak.com" ;"jon.valenti@yahoo.com"; //"christy@phlebotomyusa.com";
-global.password ="phleb123"; 
+global.screen =""
+global.email = "vanslyke_erin@yahoo.com" ; // "vanslyke_erin@yahoo.com";//"rebaarriola@gmail.com";//"ellaed22@icloud.com"; //"jessie_hines@outlook.com"; //"hoffmanjennifera@hotmail.com";//"JencollinsPTS@gmail.com";//"calvillog50@yahoo.com";// "MissStephanieBowers@gmail.com";//"ellaed22@icloud.com";//hristy@phlebotomyusa.com";//"kazzybradshaw@gmail.com";//"lipke.p@yahoo.com";//"by3vtec@icloud.com";//"ellaed22@icloud.com"; //"hoffmanjennifera@hotmail.com";// "josetta.celestine001@mymdc.net";//"cwilki43@gmail.com" ,//"jessie_hines@outlook.com" ,//"hoffmanjennifera@hotmail.com",//"jon.valenti@yahoo.com"//"cgonzalez1146@yahoo.com";// "christy@phlebotomyusa.com" ;  //"kmichellesidhu@outlook.com"; //"rebecca@bundy6pak.com" ;"jon.valenti@yahoo.com"; //"christy@phlebotomyusa.com";
+global.password ="phle123"; 
 
 global.connection = 1;  // Result of Validate Internet connecton , Variable  // Production  = 1
 
 global.msgNoConnection = " You do not have an internet connection, you will work offline! ";
 global.logs = "";
+global.login_session = false
+global.login_session_user_confirm = false
+
+global.debug_msg = false
+
+
 global.injured_report_data = null;
 global.specifications_locations = null;
-global.time_out = 30;
+global.time_out = 20;
 global.time_out_logout_no_clockIn =  120 * 60  * 1000; // 120 min
 global.time_out_counter = 0;
 global.default_location = {latitude : 56.820189, longitude : -106.069600};
@@ -52,6 +59,7 @@ global.city = "";
 global.city_id = 0;
 global.mem_sicity_id = 0;
 global.state = "";
+global.net_state = null;
 global.zip = "";
 global.notes = "";
 global.created_at = "";
@@ -121,5 +129,6 @@ global.take_picture =false;
 global.shifttype = "real";
 global.applyFraction = false;
 global.shift_found = false;
-global.required_checkout_pictures = false;
+global.required_clockout_pictures = false;
+global.required_clockin_pictures = false;
 global.require_inventory_confirm = false;
